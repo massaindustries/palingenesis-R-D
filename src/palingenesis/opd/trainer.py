@@ -839,11 +839,12 @@ class OPDTrainer:
                 self._save(f"step_{step}", step=step)
 
         eval_metrics = self._evaluate()
+        final_step = max(self.start_step - 1, config.train.steps - 1)
         logger.info(
             "final | %s",
             " ".join(f"{key}={value:.4f}" for key, value in eval_metrics.items()),
         )
-        final_step = max(self.start_step - 1, config.train.steps - 1)
+        self._track({"event": "final_eval", **eval_metrics}, final_step)
         self._save("final", step=final_step)
 
     # -------------------------------------------------------------------- eval

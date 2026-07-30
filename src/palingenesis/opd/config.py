@@ -149,6 +149,12 @@ class OPDAdapterConfig:
 
 
 @dataclass(slots=True)
+class OPDExperimentConfig:
+    condition: str = ""
+    comparison_mode: str = "student_budget"
+
+
+@dataclass(slots=True)
 class OPDConfig:
     model: OPDModelConfig = field(default_factory=OPDModelConfig)
     bridge: OPDBridgeConfig = field(default_factory=OPDBridgeConfig)
@@ -158,6 +164,7 @@ class OPDConfig:
     logging: OPDLoggingConfig = field(default_factory=OPDLoggingConfig)
     tutoring: OPDTutoringConfig = field(default_factory=OPDTutoringConfig)
     adapter: OPDAdapterConfig = field(default_factory=OPDAdapterConfig)
+    experiment: OPDExperimentConfig = field(default_factory=OPDExperimentConfig)
 
     @classmethod
     def from_yaml(cls, path: str | Path) -> "OPDConfig":
