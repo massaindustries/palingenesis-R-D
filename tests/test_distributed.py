@@ -78,11 +78,13 @@ class TinyDistributedLM(nn.Module):
         })
         self.lm_head = nn.Linear(hidden, vocab_size, bias=False)
 
-    def forward(self, input_ids, attention_mask=None, position_ids=None):
+    def forward(self, input_ids, attention_mask=None, position_ids=None, return_hidden=False):
         h = self.model["embed_tokens"](input_ids)
         for layer in self.model["layers"]:
             h = layer(h)
         h = self.model["norm"](h)
+        if return_hidden:
+            return h
         logits = self.lm_head(h)
         return type("Output", (), {"logits": logits})()
 
@@ -559,11 +561,9 @@ def _chunked_fsdp_worker(rank, world_size, results_path):
 
     # --- Chunked CE loss ---
     model.zero_grad()
-    # Get hidden states from backbone (skip lm_head)
-    h = model.model["embed_tokens"](batch["input_ids"])
-    for layer in model.model["layers"]:
-        h = layer(h)
-    h = model.model["norm"](h)
+    # Enter through the root FSDP module so its pre-forward hook materializes
+    # DTensor parameters before the backbone-only chunked-loss path.
+    h = model(batch["input_ids"], return_hidden=True)
 
     chunked_loss = chunked_cross_entropy_loss(
         h, batch["labels"], model.lm_head,
