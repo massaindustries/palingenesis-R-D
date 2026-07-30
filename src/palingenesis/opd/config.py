@@ -23,6 +23,12 @@ class OPDModelConfig:
     # Teacher placement; empty = same device as the student. On a multi-GPU
     # node "cuda:1" removes the largest memory consumer from the student's GPU.
     teacher_device: str = ""
+    # Sparse experiments use the remote SGLang backend. "local_transformers"
+    # preserves the original in-process full-KL implementation.
+    teacher_backend: str = "local_transformers"
+    teacher_endpoint: str = "http://127.0.0.1:30000"
+    train_device: str = ""
+    rollout_device: str = ""
     gradient_checkpointing: bool = False
 
 
@@ -49,6 +55,9 @@ class OPDDataConfig:
     format: str = "mcqa"
     # Prompt file (pool-row JSONL for "mcqa", messages JSONL for "messages").
     prompts_path: str = "data/prompts.jsonl"
+    # Optional explicit official dev split. When set, messages-format data does
+    # not carve a dev subset out of the training file.
+    dev_prompts_path: str = ""
     # Held-out dev rows split off the pool (deterministic, hash-ranked, unique).
     dev_size: int = 500
     # System message for rendered prompts (mcqa; empty = the template default).
@@ -75,6 +84,8 @@ class OPDSamplingConfig:
     batch_prompts: int = 32       # prompts per optimizer step
     group_size: int = 1           # rollouts per prompt (>1 only useful for CoT)
     temperature: float = 1.0
+    top_p: float = 1.0
+    top_k: int = -1
     max_new_tokens: int = 16      # fast mode: the answer is a letter
     cot_fraction: float = 0.0     # fraction of prompts using the CoT template
     cot_max_new_tokens: int = 300
@@ -89,13 +100,17 @@ class OPDTrainConfig:
     warmup_steps: int = 50
     lr_scheduler: str = "cosine"  # "cosine" or "constant"
     max_grad_norm: float = 1.0
-    loss_fn: str = "full_kl"      # "full_kl" or "sampled_rkl"
+    loss_fn: str = "full_kl"      # "full_kl", "sampled_rkl", or "sparse_anchor_rkl"
+    weight_decay: float = 0.01
+    gradient_accumulation_steps: int = 1
+    bf16: bool = True
     seed: int = 0
     score_micro_seqs: int = 32    # sequences per scoring forward (student + teacher)
     eval_every: int = 200         # dev accuracy every N steps (0 = off)
     eval_dev_samples: int = 200
     save_steps: int = 500         # checkpoint every N steps (0 = final only)
     keep_checkpoints: int = 3     # newest step_* dirs kept on disk (0 = keep all)
+    resume_from: str = ""
 
 
 @dataclass(slots=True)
@@ -107,6 +122,33 @@ class OPDLoggingConfig:
 
 
 @dataclass(slots=True)
+class OPDTutoringConfig:
+    mode: str = "sparse_anchor_rkl"
+    interval_tokens: int | str = 32
+    anchor_window_tokens: int = 1
+    always_include_final_anchor: bool = True
+    include_eos_anchor: bool = True
+    teacher_top_k: int = 64
+    student_top_k: int = 64
+    residual_bucket: bool = True
+    max_anchors_per_sequence: int = 64
+    anchor_microbatch: int = 32
+    epsilon: float = 1e-8
+    teacher_timeout_seconds: float = 30.0
+    teacher_max_retries: int = 2
+
+
+@dataclass(slots=True)
+class OPDAdapterConfig:
+    type: str = "lora"
+    rank: int = 32
+    alpha: int = 64
+    dropout: float = 0.0
+    bias: str = "none"
+    target_modules: list = field(default_factory=list)
+
+
+@dataclass(slots=True)
 class OPDConfig:
     model: OPDModelConfig = field(default_factory=OPDModelConfig)
     bridge: OPDBridgeConfig = field(default_factory=OPDBridgeConfig)
@@ -114,6 +156,8 @@ class OPDConfig:
     sampling: OPDSamplingConfig = field(default_factory=OPDSamplingConfig)
     train: OPDTrainConfig = field(default_factory=OPDTrainConfig)
     logging: OPDLoggingConfig = field(default_factory=OPDLoggingConfig)
+    tutoring: OPDTutoringConfig = field(default_factory=OPDTutoringConfig)
+    adapter: OPDAdapterConfig = field(default_factory=OPDAdapterConfig)
 
     @classmethod
     def from_yaml(cls, path: str | Path) -> "OPDConfig":
@@ -130,6 +174,8 @@ class OPDConfig:
                             v = v.lower() in ("true", "1", "yes")
                         elif isinstance(current, float) and isinstance(v, str):
                             v = float(v)
+                        elif k == "interval_tokens" and v == "final":
+                            pass
                         elif isinstance(current, int) and isinstance(v, str):
                             v = int(v)
                         setattr(section, k, v)
@@ -169,6 +215,8 @@ class OPDConfig:
                             current = getattr(section, field_name)
                             if isinstance(current, bool):
                                 setattr(section, field_name, value.lower() in ("true", "1", "yes"))
+                            elif field_name == "interval_tokens" and value == "final":
+                                setattr(section, field_name, value)
                             elif isinstance(current, int):
                                 setattr(section, field_name, int(value))
                             elif isinstance(current, float):
@@ -197,8 +245,43 @@ class OPDConfig:
             template = getattr(self.data, name)
             if template:
                 errors.extend(_check_template(f"data.{name}", template))
-        if self.train.loss_fn not in ("full_kl", "sampled_rkl"):
-            errors.append(f"train.loss_fn must be 'full_kl' or 'sampled_rkl', got {self.train.loss_fn!r}")
+        if self.train.loss_fn not in ("full_kl", "sampled_rkl", "sparse_anchor_rkl"):
+            errors.append(
+                "train.loss_fn must be 'full_kl', 'sampled_rkl', or "
+                f"'sparse_anchor_rkl', got {self.train.loss_fn!r}"
+            )
+        if self.model.teacher_backend not in ("local_transformers", "sglang"):
+            errors.append(
+                "model.teacher_backend must be 'local_transformers' or 'sglang', "
+                f"got {self.model.teacher_backend!r}"
+            )
+        interval = self.tutoring.interval_tokens
+        if isinstance(interval, str) and interval != "final":
+            try:
+                interval = int(interval)
+                self.tutoring.interval_tokens = interval
+            except ValueError:
+                errors.append("tutoring.interval_tokens must be a positive integer or 'final'")
+        if isinstance(interval, int) and (isinstance(interval, bool) or interval <= 0):
+            errors.append("tutoring.interval_tokens must be positive")
+        if self.tutoring.mode != "sparse_anchor_rkl":
+            errors.append(f"tutoring.mode must be 'sparse_anchor_rkl', got {self.tutoring.mode!r}")
+        if self.train.loss_fn == "sparse_anchor_rkl":
+            if self.model.teacher_backend != "sglang":
+                warnings.append(
+                    "sparse_anchor_rkl with local_transformers loads the teacher in-process; "
+                    "use model.teacher_backend=sglang for the L40S experiment."
+                )
+            if not self.tutoring.residual_bucket:
+                errors.append("sparse_anchor_rkl requires tutoring.residual_bucket=true")
+        if self.adapter.type != "lora":
+            errors.append(f"adapter.type must be 'lora', got {self.adapter.type!r}")
+        if self.adapter.rank <= 0 or self.adapter.alpha <= 0:
+            errors.append("adapter rank and alpha must be positive")
+        if self.train.steps < 0:
+            errors.append("train.steps must be non-negative")
+        if self.train.gradient_accumulation_steps <= 0:
+            errors.append("train.gradient_accumulation_steps must be positive")
         if self.train.lr_scheduler not in ("cosine", "constant"):
             errors.append(f"train.lr_scheduler must be 'cosine' or 'constant', got {self.train.lr_scheduler!r}")
         if not 0.0 <= self.sampling.cot_fraction <= 1.0:

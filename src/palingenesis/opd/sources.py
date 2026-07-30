@@ -162,13 +162,31 @@ class ChatMessagesSource:
         if not rows:
             raise ValueError(f"No usable rows in {config.data.prompts_path}")
 
-        # deterministic dev split by content hash (same idea as split_pool)
-        by_hash = {question_hash(json.dumps(m, ensure_ascii=False)): m for m in rows}
-        dev_hashes = sorted(by_hash)[: config.data.dev_size]
-        dev_set = set(dev_hashes)
-        self.dev_rows = [by_hash[h] for h in dev_hashes]
-        self.train_rows = [m for m in rows
-                           if question_hash(json.dumps(m, ensure_ascii=False)) not in dev_set]
+        if config.data.dev_prompts_path:
+            dev_rows = []
+            with open(config.data.dev_prompts_path) as f:
+                for line in f:
+                    if line.strip():
+                        messages = json.loads(line)["messages"]
+                        if messages and messages[-1]["role"] == "user":
+                            dev_rows.append(messages)
+            train_hashes = {question_hash(json.dumps(m, ensure_ascii=False)) for m in rows}
+            dev_hashes = {question_hash(json.dumps(m, ensure_ascii=False)) for m in dev_rows}
+            overlap = train_hashes & dev_hashes
+            if overlap:
+                raise ValueError(
+                    f"Explicit train/dev prompts overlap by {len(overlap)} normalized hashes"
+                )
+            self.train_rows = rows
+            self.dev_rows = dev_rows
+        else:
+            # deterministic dev split by content hash (same idea as split_pool)
+            by_hash = {question_hash(json.dumps(m, ensure_ascii=False)): m for m in rows}
+            dev_hashes = sorted(by_hash)[: config.data.dev_size]
+            dev_set = set(dev_hashes)
+            self.dev_rows = [by_hash[h] for h in dev_hashes]
+            self.train_rows = [m for m in rows
+                               if question_hash(json.dumps(m, ensure_ascii=False)) not in dev_set]
         logger.info("Chat prompts: %d train / %d dev", len(self.train_rows), len(self.dev_rows))
 
     def sample(self):
