@@ -226,12 +226,16 @@ Final autonomous results on the untouched 40-task test split:
 | Guided interval 128 | 11, 9, 13 | 27.50% | 0.00 pp |
 
 Interval 32 was the best observed tradeoff, outperforming base/offline by 3.33
-percentage points on average. Two seeds fixed two base failures without a
-regression, while the third had one fix and one regression. The individual
+percentage points on average. Across the 120 seed-task outcomes it made five
+fixes and one regression, so `(5 - 1) / 120 = +3.33 pp`. Interval 8 made six
+fixes but seven regressions, and interval 128 made three of each: the advantage
+at interval 32 came mainly from avoiding collateral regressions, not from
+creating the largest number of fixes. Two seeds fixed two base failures without
+a regression, while the third had one fix and one regression. The individual
 paired McNemar value for each +5-point seed was `p=0.5`, and the paired
 bootstrap intervals include zero, so this pilot is **evidence of real teacher
 following but not yet a statistically conclusive autonomous quality gain**.
 Interval 8 over-intervened; interval 128 under-intervened.
 
-Finally, the complete repository test suite passed: **294 tests passed**, with
-Ruff, whitespace checks, and staged-secret scanning also clean.
+Finally, the complete repository test suite passed: **299 tests passed**. The
+new diagnostic and its tests pass Ruff; whitespace and secret scans are clean.

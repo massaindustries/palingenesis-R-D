@@ -106,6 +106,13 @@ python experiments/guided_tutoring_v2/evaluate_selected.py \
 python experiments/guided_tutoring_v2/analyze_test.py \
   --evaluation-root /path/to/test_evaluations \
   --output /path/to/test_evaluations/analysis.json
+
+python experiments/guided_tutoring_v2/diagnose_interval_effects.py \
+  --run-root /path/to/scientific_run \
+  --selection /path/to/dev_evaluations/selection.json \
+  --evaluation-root /path/to/test_evaluations \
+  --deterministic-probe /path/to/deterministic_guidance_probe/summary.json \
+  --output /path/to/test_evaluations/interval_diagnostic.json
 ```
 
 The completed experiment, including negative results and limitations, is

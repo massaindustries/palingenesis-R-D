@@ -164,6 +164,73 @@ fix and one regression. No guided condition is statistically conclusive on
 40 tasks, and all paired bootstrap intervals include zero at their relevant
 resolution.
 
+## Why interval 32 has the largest observed gain
+
+The test delta can be decomposed exactly over the 3 seeds and 40 tasks. If
+`F_k` is the number of base failures fixed at interval `k` and `R_k` is the
+number of base successes regressed, then
+
+```text
+delta_k = (F_k - R_k) / (3 * 40).
+```
+
+| Interval | Fixes / 120 | Regressions / 120 | Net | Delta vs base | Mean completion tokens | Max-length / 120 |
+|---:|---:|---:|---:|---:|---:|---:|
+| 8 | 6 | 7 | -1 | -0.83 pp | 288.29 | 7 |
+| 32 | 5 | 1 | +4 | +3.33 pp | 214.85 | 0 |
+| 128 | 3 | 3 | 0 | 0.00 pp | 252.40 | 3 |
+
+Interval 32 therefore wins mainly by preserving existing capabilities, not
+by producing the most fixes: interval 8 actually has one more fix, but six
+more regressions. The observed interval-32 advantage over interval 8 is
+`(4 - (-1)) / 120 = 4.17 pp`; its advantage over interval 128 is
+`(4 - 0) / 120 = 3.33 pp`.
+
+The intervention density in the selected checkpoints explains the direction
+of the result:
+
+| Interval | Ideal teacher share `8/(k+8)` | Observed teacher share | Groups / guided rollout | Intervention coverage | Mean selected updates |
+|---:|---:|---:|---:|---:|---:|
+| 8 | 50.00% | 49.35% | 17.42 | 100.00% | 16.67 |
+| 32 | 20.00% | 18.46% | 5.48 | 100.00% | 5.00 |
+| 128 | 5.88% | 4.32% | 1.35 | 92.22% | 18.33 |
+
+At interval 8, about half of the mixed trajectory is teacher-generated and
+there are roughly 17 continuation seams per rollout. The selected models
+produce much longer completions and seven truncation failures, consistent
+with over-intervention and trajectory stitching causing collateral changes.
+At interval 128, the tutor supplies only about 1.35 groups per rollout and
+does not intervene at all in some early-terminating trajectories, so the
+correction signal is sparse. Interval 32 lies between them: about five or six
+teacher groups cover every guided rollout while leaving roughly four fifths
+of the trajectory autonomous.
+
+The deterministic train-only probe supports this mechanism without involving
+checkpoint selection: interval 32 changes 9/20 student-only passes to 11/20
+through 2 fixes and 0 regressions; interval 8 has 2 fixes and 2 regressions,
+and interval 128 has 0 fixes and 1 regression. The selected interval-32
+teacher targets also have the highest weighted pre-update NLL (0.8733) and
+the largest absolute NLL reduction (-0.06145). This says those local targets
+were particularly informative to the student, although NLL values across
+intervals are not strictly comparable because they score different token
+positions.
+
+This is a plausible sweet spot, not a statistically established optimum. The
+task-cluster bootstrap 95% interval for interval 32 versus base is
+[-1.67, +10.00] pp; for interval 32 versus interval 8 it is
+[-4.17, +11.67] pp. Both include zero. Moreover, all interval-32 models were
+selected at step 5, while the selected interval-8 and interval-128 models
+average 16.67 and 18.33 updates. At the matched step-5 dev checkpoint,
+interval 32 is still best (36.51% versus 31.75% and 30.16%), but the untouched
+test did not evaluate all matched checkpoints. The positive test events are
+also concentrated on two tasks, the frozen teacher itself fails both of those
+test tasks, and seeds 0 and 1 have identical pass/fail vectors. The gains can
+therefore reflect transferred local patterns learned on train, but not direct
+copying of successful held-out teacher solutions. The correct conclusion is
+that the logs support a moderate-intervention mechanism, while a larger
+matched-update experiment is needed to distinguish a real interval effect
+from task and selection noise.
+
 ## Scientific outcome
 
 The frozen teacher really did correct the student, and the student really did
