@@ -97,6 +97,7 @@ class TransformersRolloutWorker:
         *,
         expected_policy_version: int,
         greedy: bool = False,
+        compute_topk: bool = True,
     ) -> RolloutResult:
         if self.policy_version != expected_policy_version:
             raise RuntimeError(
@@ -142,8 +143,9 @@ class TransformersRolloutWorker:
         completions = [self._clean(generated[row, width:].tolist()) for row in range(len(prompt_ids))]
 
         topk_started = time.perf_counter()
-        top_ids = self._topk_at_anchors(prompt_ids, completions)
-        torch.cuda.synchronize(self.device)
+        top_ids = self._topk_at_anchors(prompt_ids, completions) if compute_topk else [{} for _ in prompt_ids]
+        if str(self.device).startswith("cuda"):
+            torch.cuda.synchronize(self.device)
         return RolloutResult(
             completions=completions,
             student_top_ids=top_ids,

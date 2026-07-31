@@ -135,3 +135,29 @@ def test_sglang_backend_malformed_response_and_circuit_breaker():
     assert client.calls == 3
     with pytest.raises(RuntimeError, match="circuit breaker"):
         backend.score_anchors([query], top_k=1)
+
+
+def test_sglang_backend_generates_actual_token_ids():
+    payload = {
+        "output_ids": [7, 8, 9],
+        "meta_info": {
+            "finish_reason": {"type": "length"},
+        }
+    }
+    client = _SequenceClient([payload])
+    backend = SGLangTeacherBackend("http://teacher", client=client)
+    [result] = backend.generate_tokens([(1, 2)], max_new_tokens=3)
+    assert result.token_ids == (7, 8, 9)
+    assert result.finish_reason == "length"
+    assert backend.successful_request_count == 1
+
+
+def test_sglang_generation_rejects_text_only_response():
+    client = _SequenceClient([{"text": "not auditable"}])
+    backend = SGLangTeacherBackend(
+        "http://teacher",
+        client=client,
+        max_retries=0,
+    )
+    with pytest.raises(RuntimeError, match="generation failed"):
+        backend.generate_tokens([(1, 2)], max_new_tokens=3)

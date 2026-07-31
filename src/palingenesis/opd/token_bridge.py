@@ -135,6 +135,21 @@ class TokenBridge:
         """Map a cleaned student completion to teacher ids (identity outside swap)."""
         return [self.swap.get(t, t) for t in ids]
 
+    def to_student(self, ids: list[int]) -> list[int]:
+        """Map generated teacher tokens back into the student's vocabulary."""
+        inverse = {teacher: student for student, teacher in self.swap.items()}
+        output = []
+        for token_id in ids:
+            if token_id in inverse:
+                output.append(inverse[token_id])
+            elif 0 <= token_id < self.shared_vocab_size:
+                output.append(token_id)
+            else:
+                raise TokenBridgeError(
+                    f"teacher generated token id {token_id} outside shared vocabulary"
+                )
+        return output
+
 
 def check_compatible(
     student_tok,

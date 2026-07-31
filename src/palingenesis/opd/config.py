@@ -100,7 +100,9 @@ class OPDTrainConfig:
     warmup_steps: int = 50
     lr_scheduler: str = "cosine"  # "cosine" or "constant"
     max_grad_norm: float = 1.0
-    loss_fn: str = "full_kl"  # "full_kl", "sampled_rkl", or "sparse_anchor_rkl"
+    # "guided_ce" trains only on teacher-inserted tokens in an interleaved
+    # student/teacher trajectory.
+    loss_fn: str = "full_kl"
     weight_decay: float = 0.01
     gradient_accumulation_steps: int = 1
     bf16: bool = True
@@ -125,6 +127,12 @@ class OPDLoggingConfig:
 class OPDTutoringConfig:
     mode: str = "sparse_anchor_rkl"
     interval_tokens: int | str = 32
+    guidance_group_tokens: int = 8
+    shuffle_teacher_groups: bool = False
+    paired_student_only: bool = False
+    # Additional prompt batches allowed when every completion ends before the
+    # first teacher intervention. Rejected rollouts/tokens remain accounted.
+    empty_microstep_retries: int = 1
     anchor_window_tokens: int = 1
     always_include_final_anchor: bool = True
     include_eos_anchor: bool = True
@@ -252,9 +260,10 @@ class OPDConfig:
             template = getattr(self.data, name)
             if template:
                 errors.extend(_check_template(f"data.{name}", template))
-        if self.train.loss_fn not in ("full_kl", "sampled_rkl", "sparse_anchor_rkl"):
+        valid_losses = ("full_kl", "sampled_rkl", "sparse_anchor_rkl", "guided_ce")
+        if self.train.loss_fn not in valid_losses:
             errors.append(
-                f"train.loss_fn must be 'full_kl', 'sampled_rkl', or 'sparse_anchor_rkl', got {self.train.loss_fn!r}"
+                f"train.loss_fn must be one of {valid_losses}, got {self.train.loss_fn!r}"
             )
         if self.model.teacher_backend not in ("local_transformers", "sglang"):
             errors.append(
@@ -269,8 +278,19 @@ class OPDConfig:
                 errors.append("tutoring.interval_tokens must be a positive integer or 'final'")
         if isinstance(interval, int) and (isinstance(interval, bool) or interval <= 0):
             errors.append("tutoring.interval_tokens must be positive")
-        if self.tutoring.mode != "sparse_anchor_rkl":
-            errors.append(f"tutoring.mode must be 'sparse_anchor_rkl', got {self.tutoring.mode!r}")
+        if self.tutoring.mode not in ("sparse_anchor_rkl", "guided_tokens"):
+            errors.append(
+                "tutoring.mode must be 'sparse_anchor_rkl' or 'guided_tokens', "
+                f"got {self.tutoring.mode!r}"
+            )
+        expected_mode = (
+            "guided_tokens" if self.train.loss_fn == "guided_ce" else "sparse_anchor_rkl"
+        )
+        if self.train.loss_fn in ("sparse_anchor_rkl", "guided_ce") and self.tutoring.mode != expected_mode:
+            errors.append(
+                f"train.loss_fn={self.train.loss_fn!r} requires "
+                f"tutoring.mode={expected_mode!r}"
+            )
         if self.train.loss_fn == "sparse_anchor_rkl":
             if self.model.teacher_backend != "sglang":
                 warnings.append(
@@ -279,6 +299,15 @@ class OPDConfig:
                 )
             if not self.tutoring.residual_bucket:
                 errors.append("sparse_anchor_rkl requires tutoring.residual_bucket=true")
+        if self.train.loss_fn == "guided_ce":
+            if self.model.teacher_backend != "sglang":
+                errors.append("guided_ce requires model.teacher_backend='sglang'")
+            if not isinstance(self.tutoring.interval_tokens, int):
+                errors.append("guided_ce requires an integer tutoring.interval_tokens")
+            if self.tutoring.guidance_group_tokens <= 0:
+                errors.append("tutoring.guidance_group_tokens must be positive")
+            if self.tutoring.empty_microstep_retries < 0:
+                errors.append("tutoring.empty_microstep_retries must be non-negative")
         if self.adapter.type != "lora":
             errors.append(f"adapter.type must be 'lora', got {self.adapter.type!r}")
         if self.adapter.rank <= 0 or self.adapter.alpha <= 0:

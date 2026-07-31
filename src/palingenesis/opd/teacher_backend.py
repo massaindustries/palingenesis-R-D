@@ -29,10 +29,21 @@ class AnchorScores:
         return dict(zip(self.token_ids, self.logprobs))
 
 
+@dataclass(frozen=True, slots=True)
+class TeacherGeneration:
+    token_ids: tuple[int, ...]
+    finish_reason: str
+
+
 @runtime_checkable
 class TeacherBackend(Protocol):
     def score_anchors(self, queries: list[AnchorQuery], top_k: int) -> list[AnchorScores]:
         """Score next-token distributions for each prefix."""
+
+    def generate_tokens(
+        self, prefix_ids: list[tuple[int, ...]], max_new_tokens: int
+    ) -> list[TeacherGeneration]:
+        """Generate deterministic continuation tokens for each prefix."""
 
 
 def _validate_scores(scores: AnchorScores) -> None:
@@ -87,6 +98,41 @@ class LocalTransformersTeacherBackend:
             _validate_scores(score)
             results.append(score)
         return results
+
+    @torch.inference_mode()
+    def generate_tokens(
+        self, prefix_ids: list[tuple[int, ...]], max_new_tokens: int
+    ) -> list[TeacherGeneration]:
+        if not prefix_ids:
+            return []
+        if max_new_tokens <= 0:
+            raise ValueError("max_new_tokens must be positive")
+        width = max(len(prefix) for prefix in prefix_ids)
+        ids = torch.full(
+            (len(prefix_ids), width),
+            self.pad_token_id,
+            dtype=torch.long,
+            device=self.device,
+        )
+        mask = torch.zeros_like(ids)
+        for row, prefix in enumerate(prefix_ids):
+            values = torch.tensor(prefix, dtype=torch.long, device=self.device)
+            ids[row, width - len(prefix) :] = values
+            mask[row, width - len(prefix) :] = 1
+        generated = self.model.generate(
+            ids,
+            attention_mask=mask,
+            max_new_tokens=max_new_tokens,
+            do_sample=False,
+            pad_token_id=self.pad_token_id,
+        )
+        return [
+            TeacherGeneration(
+                token_ids=tuple(generated[row, width:].tolist()),
+                finish_reason="length",
+            )
+            for row in range(len(prefix_ids))
+        ]
 
 
 class SGLangTeacherBackend:
@@ -163,6 +209,84 @@ class SGLangTeacherBackend:
             finally:
                 self.total_latency_seconds += time.perf_counter() - request_started
         raise RuntimeError(f"teacher request failed after bounded retries: {last_error}") from last_error
+
+    def generate_tokens(
+        self, prefix_ids: list[tuple[int, ...]], max_new_tokens: int
+    ) -> list[TeacherGeneration]:
+        """Generate actual teacher continuations, not next-token score tables."""
+        if not prefix_ids:
+            return []
+        if max_new_tokens <= 0:
+            raise ValueError("max_new_tokens must be positive")
+        if any(not prefix for prefix in prefix_ids):
+            raise ValueError("teacher prefixes must not be empty")
+        if self.consecutive_failures >= self.circuit_breaker_failures:
+            raise RuntimeError("teacher circuit breaker is open")
+        payload = {
+            "input_ids": [list(prefix) for prefix in prefix_ids],
+            "sampling_params": {
+                "max_new_tokens": max_new_tokens,
+                "temperature": 0,
+            },
+        }
+        last_error: Exception | None = None
+        for attempt in range(self.max_retries + 1):
+            self.request_count += 1
+            request_started = time.perf_counter()
+            try:
+                response = self.client.post(
+                    f"{self.endpoint}/generate",
+                    json=payload,
+                    timeout=self.timeout_seconds,
+                )
+                response.raise_for_status()
+                raw = response.json()
+                rows = raw if isinstance(raw, list) else [raw]
+                if len(rows) != len(prefix_ids):
+                    raise ValueError(
+                        f"teacher batch size mismatch: expected {len(prefix_ids)}, got {len(rows)}"
+                    )
+                output = [
+                    self._parse_generation_row(row, max_new_tokens) for row in rows
+                ]
+                self.consecutive_failures = 0
+                self.successful_request_count += 1
+                return output
+            except Exception as error:  # noqa: BLE001
+                last_error = error
+                self.failure_count += 1
+                self.consecutive_failures += 1
+                if attempt >= self.max_retries or self.consecutive_failures >= self.circuit_breaker_failures:
+                    break
+                time.sleep(self.retry_backoff_seconds * (2**attempt))
+            finally:
+                self.total_latency_seconds += time.perf_counter() - request_started
+        raise RuntimeError(
+            f"teacher generation failed after bounded retries: {last_error}"
+        ) from last_error
+
+    @staticmethod
+    def _parse_generation_row(
+        row: dict, max_new_tokens: int
+    ) -> TeacherGeneration:
+        try:
+            meta = row["meta_info"]
+            # SGLang 0.5.8 returns auditable token IDs at the top level.
+            # Never reconstruct them by tokenizing `text`.
+            raw_ids = row["output_ids"]
+        except (KeyError, TypeError) as error:
+            raise ValueError("malformed SGLang generation response") from error
+        if not isinstance(raw_ids, list):
+            raise ValueError("SGLang output_token_ids must be a list")
+        token_ids = tuple(int(token_id) for token_id in raw_ids)
+        if len(token_ids) > max_new_tokens or any(token_id < 0 for token_id in token_ids):
+            raise ValueError("SGLang returned invalid generated token IDs")
+        finish = meta.get("finish_reason", {})
+        if isinstance(finish, dict):
+            finish_reason = str(finish.get("type", "unknown"))
+        else:
+            finish_reason = str(finish or "unknown")
+        return TeacherGeneration(token_ids=token_ids, finish_reason=finish_reason)
 
     @staticmethod
     def _parse_row(row: dict, query: AnchorQuery, top_k: int) -> AnchorScores:

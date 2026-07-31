@@ -1,0 +1,65 @@
+model:
+  student: /opt/sparse-opd/models/Qwen3-4B
+  teacher: /opt/sparse-opd/models/Qwen3-Coder-Next-FP8
+  teacher_backend: sglang
+  teacher_endpoint: http://127.0.0.1:30000
+  train_device: cuda:2
+  rollout_device: cuda:3
+  gradient_checkpointing: true
+bridge:
+  eos_map: {}
+  extra_stop_tokens: []
+adapter:
+  type: lora
+  rank: 32
+  alpha: 64
+  dropout: 0.0
+  bias: none
+  target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+data:
+  format: messages
+  prompts_path: experiments/guided_tutoring_v2/data/bcb_long96/train_prompts.jsonl
+  dev_prompts_path: experiments/guided_tutoring_v2/data/bcb_long96/dev_prompts.jsonl
+  p_reference_shots: 0.0
+  p_pool_shots: 0.0
+sampling:
+  batch_prompts: 4
+  group_size: 1
+  temperature: 1.0
+  top_p: 1.0
+  top_k: -1
+  max_new_tokens: 512
+  gen_micro_seqs: 4
+tutoring:
+  mode: guided_tokens
+  interval_tokens: 128
+  guidance_group_tokens: 8
+  shuffle_teacher_groups: false
+  paired_student_only: true
+  empty_microstep_retries: 15
+  teacher_timeout_seconds: 120.0
+  teacher_max_retries: 2
+train:
+  output_dir: /opt/sparse-opd/runs/guided_v2/smoke_i128
+  steps: 5
+  learning_rate: 2.0e-5
+  warmup_steps: 2
+  lr_scheduler: constant
+  max_grad_norm: 1.0
+  loss_fn: guided_ce
+  weight_decay: 0.01
+  gradient_accumulation_steps: 4
+  bf16: true
+  seed: 0
+  score_micro_seqs: 4
+  eval_every: 0
+  save_steps: 0
+  keep_checkpoints: 0
+logging:
+  log_every: 1
+  use_wandb: false
+  project: guided-tutoring-v2
+  run_name: guided_i128_g8_smoke_seed0
+experiment:
+  condition: bcb_long96_guided_i128_g8
+  comparison_mode: equal_optimizer_steps

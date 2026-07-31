@@ -20,6 +20,7 @@ torchtitan/
 *.pt
 *.bin
 *.safetensors
+experiments/guided_tutoring_v2/data/
 
 
 # MkDocs build output

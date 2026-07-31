@@ -10,11 +10,13 @@ Per step (mirrors tinker-cookbook's on_policy_distillation, self-contained):
      sum_v p_student(v) * (log p_student(v) - log p_teacher(v))
      ("sampled_rkl" reproduces tinker's sampled-token REINFORCE variant)
 
-Single-process, single-GPU by design: the student must both generate and take
-gradients each step, so there is no idle phase to shard away. On an 80 GB GPU
-a 0.4B student + 3B teacher fit together; if they don't, lower
-train.score_micro_seqs, enable model.gradient_checkpointing, or move the
-teacher with model.teacher_device.
+In ``guided_ce`` mode, steps 3-4 are replaced by interleaving real greedy
+teacher continuation groups into the sampled student trajectory and applying
+cross entropy only at those provenance-tracked teacher-token positions.
+
+The trainer is single-process. It can either generate on the training device
+or synchronize a dedicated rollout replica on ``model.rollout_device``; the
+teacher can be local or served by SGLang.
 
 Launch:
     pgs distill --config configs/distill_opd.yaml
@@ -25,6 +27,7 @@ from __future__ import annotations
 
 import contextlib
 import dataclasses
+import hashlib
 import json
 import logging
 import math
@@ -38,6 +41,11 @@ import torch.nn.functional as F
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from palingenesis.opd.config import OPDConfig
+from palingenesis.opd.guided import (
+    GuidedTrajectory,
+    assign_shuffled_group_targets,
+    build_guided_trajectories,
+)
 from palingenesis.opd.rollout_worker import TransformersRolloutWorker, transformers_top_k
 from palingenesis.opd.sources import PromptSource, build_source
 from palingenesis.opd.sparse import select_anchor_positions, sparse_anchor_rkl
@@ -45,10 +53,23 @@ from palingenesis.opd.teacher_backend import (
     AnchorQuery,
     LocalTransformersTeacherBackend,
     SGLangTeacherBackend,
+    TeacherGeneration,
 )
 from palingenesis.opd.token_bridge import TokenBridge, check_compatible
 
 logger = logging.getLogger(__name__)
+
+
+def intermediate_checkpoint_name(
+    zero_based_step: int, save_steps: int, total_steps: int
+) -> str | None:
+    """Return a human-counted checkpoint name after a completed update."""
+    if save_steps <= 0:
+        return None
+    completed_updates = zero_based_step + 1
+    if completed_updates >= total_steps or completed_updates % save_steps:
+        return None
+    return f"step_{completed_updates}"
 
 
 def load_causal_lm(name: str, dtype: torch.dtype):
@@ -83,6 +104,9 @@ class OPDTrainer:
         torch.manual_seed(config.train.seed)
         os.makedirs(config.train.output_dir, exist_ok=True)
         self.metrics_path = os.path.join(config.train.output_dir, "metrics.jsonl")
+        self.provenance_path = os.path.join(
+            config.train.output_dir, "teacher_provenance.jsonl"
+        )
         resolved_path = os.path.join(config.train.output_dir, "config_resolved.json")
         if not os.path.exists(resolved_path):
             with open(resolved_path, "x") as handle:
@@ -580,6 +604,312 @@ class OPDTrainer:
         stats["teacher_scored_tokens"] = teacher_scored_tokens
         return torch.stack(losses).mean(), count, stats
 
+    def _guided_loss_on_chunk(self, chunk):
+        """Cross entropy only at teacher-inserted token positions.
+
+        Matched NLL is always measured against the true teacher tokens. In the
+        shuffled control, only the optimization targets are replaced.
+        """
+        seqs = []
+        prediction_positions = []
+        matched_targets = []
+        training_targets = []
+        for batch, trajectory in chunk:
+            positions = trajectory.teacher_positions
+            if not positions:
+                continue
+            seqs.append(batch["s_prompt"] + trajectory.completion[:-1])
+            prediction_positions.append(
+                [len(batch["s_prompt"]) + position - 1 for position in positions]
+            )
+            matched_targets.extend(trajectory.completion[position] for position in positions)
+            if self.config.tutoring.shuffle_teacher_groups:
+                training_targets.extend(
+                    trajectory.shuffled_targets[position] for position in positions
+                )
+            else:
+                training_targets.extend(
+                    trajectory.completion[position] for position in positions
+                )
+        if not matched_targets:
+            zero = next(self.student.parameters()).sum() * 0.0
+            return zero, 0, {
+                "teacher_token_nll": 0.0,
+                "training_target_nll": 0.0,
+                "teacher_token_top1_agreement": 0.0,
+            }
+
+        logits = self._gather_anchor_logits(
+            self.student,
+            seqs,
+            prediction_positions,
+            self.s_pad,
+            self.device,
+            autocast_dev=self.device.split(":")[0] if self.device != "cpu" else None,
+        ).float()
+        matched = torch.tensor(matched_targets, dtype=torch.long, device=self.device)
+        training = torch.tensor(training_targets, dtype=torch.long, device=self.device)
+        matched_nll = F.cross_entropy(logits, matched, reduction="none")
+        training_nll = F.cross_entropy(logits, training, reduction="none")
+        return training_nll.sum(), len(matched_targets), {
+            "teacher_token_nll": matched_nll.detach().mean().item(),
+            "training_target_nll": training_nll.detach().mean().item(),
+            "teacher_token_top1_agreement": (
+                logits.detach().argmax(dim=-1) == matched
+            )
+            .float()
+            .mean()
+            .item(),
+        }
+
+    @torch.no_grad()
+    def _measure_guided_rollouts(self, rollouts) -> dict[str, float]:
+        weighted = {
+            "teacher_token_nll": 0.0,
+            "training_target_nll": 0.0,
+            "teacher_token_top1_agreement": 0.0,
+        }
+        total = 0
+        for offset in range(0, len(rollouts), self.config.train.score_micro_seqs):
+            _, count, stats = self._guided_loss_on_chunk(
+                rollouts[offset : offset + self.config.train.score_micro_seqs]
+            )
+            total += count
+            for key in weighted:
+                weighted[key] += stats[key] * count
+        if total <= 0:
+            raise RuntimeError("guided post-update measurement has no teacher tokens")
+        return {key: value / total for key, value in weighted.items()}
+
+    def _track_guided_provenance(
+        self,
+        rollouts: list[tuple[dict, GuidedTrajectory]],
+        paired_completions: list[list[int]],
+    ) -> None:
+        records = []
+        for rollout_index, ((batch, trajectory), paired) in enumerate(
+            zip(rollouts, paired_completions)
+        ):
+            groups = []
+            for group_index, group in enumerate(trajectory.teacher_groups):
+                token_ids = trajectory.completion[group.start : group.end]
+                groups.append(
+                    {
+                        "group_index": group_index,
+                        "start": group.start,
+                        "end": group.end,
+                        "token_ids": token_ids,
+                        "token_sha256": hashlib.sha256(
+                            json.dumps(token_ids).encode("utf-8")
+                        ).hexdigest(),
+                        "finish_reason": group.finish_reason,
+                        "nonempty": bool(token_ids),
+                    }
+                )
+            records.append(
+                {
+                    "step": getattr(self, "current_step", -1),
+                    "microstep": getattr(self, "current_microstep", -1),
+                    "rollout_index": rollout_index,
+                    "policy_version": self.policy_version,
+                    "task_id": batch["meta"].get("id"),
+                    "prompt_hash": batch["meta"].get("prompt_hash"),
+                    "interval_tokens": self.config.tutoring.interval_tokens,
+                    "guidance_group_tokens": self.config.tutoring.guidance_group_tokens,
+                    "completion_token_ids": trajectory.completion,
+                    "teacher_mask": trajectory.teacher_mask,
+                    "student_tokens": trajectory.student_tokens,
+                    "teacher_tokens": trajectory.teacher_tokens,
+                    "teacher_groups": groups,
+                    "paired_student_only_token_ids": paired,
+                    "shuffled_control": self.config.tutoring.shuffle_teacher_groups,
+                }
+            )
+        with open(self.provenance_path, "a") as handle:
+            for record in records:
+                handle.write(json.dumps(record, sort_keys=True) + "\n")
+
+    def _train_guided_microstep(self, batch, gradient_scale: float, micro_started: float):
+        config = self.config
+        request_before = getattr(self.teacher_backend, "request_count", 0)
+        success_before = getattr(self.teacher_backend, "successful_request_count", 0)
+        failure_before = getattr(self.teacher_backend, "failure_count", 0)
+        latency_before = getattr(self.teacher_backend, "total_latency_seconds", 0.0)
+        rollout_generation_ms = 0.0
+
+        def student_generate(indices, completions, limit):
+            nonlocal rollout_generation_ms
+            prompts = [
+                batch[index]["s_prompt"] + completion
+                for index, completion in zip(indices, completions)
+            ]
+            if self.rollout_worker is not None:
+                result = self.rollout_worker.generate(
+                    prompts,
+                    limit,
+                    expected_policy_version=self.policy_version,
+                    compute_topk=False,
+                )
+                if result.policy_version != self.policy_version:
+                    raise RuntimeError(
+                        f"stale rollout {result.policy_version}, expected {self.policy_version}"
+                    )
+                rollout_generation_ms += result.generation_ms
+                return result.completions
+            started = time.perf_counter()
+            output = self._generate(prompts, limit)
+            rollout_generation_ms += (time.perf_counter() - started) * 1000
+            return output
+
+        def teacher_generate(indices, completions, limit):
+            prefixes = [
+                tuple(batch[index]["t_prompt"] + self.bridge.to_teacher(completion))
+                for index, completion in zip(indices, completions)
+            ]
+            generated = self.teacher_backend.generate_tokens(prefixes, limit)
+            return [
+                TeacherGeneration(
+                    token_ids=tuple(self.bridge.to_student(list(item.token_ids))),
+                    finish_reason=item.finish_reason,
+                )
+                for item in generated
+            ]
+
+        trajectories = build_guided_trajectories(
+            count=len(batch),
+            max_completion_tokens=[item["mnt"] for item in batch],
+            interval_tokens=int(config.tutoring.interval_tokens),
+            guidance_group_tokens=config.tutoring.guidance_group_tokens,
+            stop_ids=self.bridge.stop_ids,
+            student_generate=student_generate,
+            teacher_generate=teacher_generate,
+        )
+        rollouts = [
+            (item, trajectory)
+            for item, trajectory in zip(batch, trajectories)
+            if trajectory.completion and trajectory.teacher_tokens
+        ]
+        if not rollouts:
+            self.last_empty_guided_stats = {
+                "rejected_no_teacher_rollouts": len(trajectories),
+                "rejected_no_teacher_student_tokens": sum(
+                    trajectory.student_tokens for trajectory in trajectories
+                ),
+                "rejected_no_teacher_trajectory_tokens": sum(
+                    len(trajectory.completion) for trajectory in trajectories
+                ),
+            }
+            return None
+        if config.tutoring.shuffle_teacher_groups:
+            assign_shuffled_group_targets([trajectory for _, trajectory in rollouts])
+
+        paired_completions = [[] for _ in rollouts]
+        if config.tutoring.paired_student_only:
+            prompts = [item["s_prompt"] for item, _ in rollouts]
+            limits = {item["mnt"] for item, _ in rollouts}
+            if len(limits) != 1:
+                raise ValueError("paired student-only rollout requires one token budget")
+            limit = limits.pop()
+            if self.rollout_worker is not None:
+                paired_result = self.rollout_worker.generate(
+                    prompts,
+                    limit,
+                    expected_policy_version=self.policy_version,
+                    compute_topk=False,
+                )
+                paired_completions = paired_result.completions
+                rollout_generation_ms += paired_result.generation_ms
+            else:
+                paired_completions = self._generate(prompts, limit)
+        self._track_guided_provenance(rollouts, paired_completions)
+
+        teacher_tokens = sum(trajectory.teacher_tokens for _, trajectory in rollouts)
+        student_tokens = sum(trajectory.student_tokens for trajectory in trajectories)
+        trajectory_tokens = sum(len(trajectory.completion) for trajectory in trajectories)
+        paired_student_tokens = sum(len(completion) for completion in paired_completions)
+        no_teacher_rollouts = len(trajectories) - len(rollouts)
+        no_teacher_student_tokens = sum(
+            trajectory.student_tokens
+            for trajectory in trajectories
+            if not trajectory.teacher_tokens
+        )
+        groups = sum(len(trajectory.teacher_groups) for _, trajectory in rollouts)
+        nonempty_groups = sum(
+            group.end > group.start
+            for _, trajectory in rollouts
+            for group in trajectory.teacher_groups
+        )
+        weighted = {
+            "teacher_token_nll_pre": 0.0,
+            "training_target_nll_pre": 0.0,
+            "teacher_token_top1_pre": 0.0,
+        }
+        backward_ms = 0.0
+        scoring_started = time.perf_counter()
+        for offset in range(0, len(rollouts), config.train.score_micro_seqs):
+            chunk = rollouts[offset : offset + config.train.score_micro_seqs]
+            loss, count, stats = self._guided_loss_on_chunk(chunk)
+            if not torch.isfinite(loss):
+                raise FloatingPointError("non-finite guided CE loss")
+            backward_started = time.perf_counter()
+            (loss / teacher_tokens * gradient_scale).backward()
+            backward_ms += (time.perf_counter() - backward_started) * 1000
+            weighted["teacher_token_nll_pre"] += stats["teacher_token_nll"] * count / teacher_tokens
+            weighted["training_target_nll_pre"] += stats["training_target_nll"] * count / teacher_tokens
+            weighted["teacher_token_top1_pre"] += (
+                stats["teacher_token_top1_agreement"] * count / teacher_tokens
+            )
+        source_stats = self.source.batch_stats(
+            [
+                (item["meta"], self.s_tok.decode(trajectory.completion))
+                for item, trajectory in rollouts
+            ]
+        )
+        return {
+            **weighted,
+            **source_stats,
+            "kl": weighted["teacher_token_nll_pre"],
+            "sampled_kl": weighted["teacher_token_nll_pre"],
+            "residual_mass": 0.0,
+            "teacher_residual_mass": 0.0,
+            "output_entropy": 0.0,
+            "teacher_student_agreement": weighted["teacher_token_top1_pre"],
+            "student_generated_tokens": student_tokens,
+            "trajectory_tokens": trajectory_tokens,
+            "teacher_anchor_positions": teacher_tokens,
+            "teacher_inserted_tokens": teacher_tokens,
+            "teacher_scored_tokens": teacher_tokens,
+            "teacher_guidance_groups": groups,
+            "teacher_nonempty_groups": nonempty_groups,
+            "rollout_count": len(trajectories),
+            "guided_rollout_count": len(rollouts),
+            "rejected_no_teacher_rollouts": no_teacher_rollouts,
+            "rejected_no_teacher_student_tokens": no_teacher_student_tokens,
+            "paired_student_only_tokens": paired_student_tokens,
+            "teacher_requests": (
+                getattr(self.teacher_backend, "request_count", 0) - request_before
+            ),
+            "teacher_successful_requests": (
+                getattr(self.teacher_backend, "successful_request_count", 0)
+                - success_before
+            ),
+            "teacher_failures": (
+                getattr(self.teacher_backend, "failure_count", 0) - failure_before
+            ),
+            "teacher_wall_clock_ms": (
+                getattr(self.teacher_backend, "total_latency_seconds", 0.0)
+                - latency_before
+            )
+            * 1000,
+            "rollout_generation_ms": rollout_generation_ms,
+            "rollout_student_topk_ms": 0.0,
+            "scoring_and_forward_ms": (time.perf_counter() - scoring_started) * 1000,
+            "backward_ms": backward_ms,
+            "microstep_wall_clock_ms": (time.perf_counter() - micro_started) * 1000,
+            "rollout_policy_version": self.policy_version,
+            "_guided_rollouts": rollouts,
+        }
+
     # ------------------------------------------------------------------- train
 
     def _train_microstep(self, gradient_scale: float) -> dict | None:
@@ -600,6 +930,9 @@ class OPDTrainer:
                         "meta": meta,
                     }
                 )
+
+        if config.train.loss_fn == "guided_ce":
+            return self._train_guided_microstep(batch, gradient_scale, micro_started)
 
         completions: dict[int, list[int]] = {}
         rollout_top_ids: dict[int, dict[int, tuple[int, ...]]] = {}
@@ -709,6 +1042,7 @@ class OPDTrainer:
         run_started = time.time()
         grad_accum = config.train.gradient_accumulation_steps
         for step in range(self.start_step, config.train.steps):
+            self.current_step = step
             step_started = time.perf_counter()
             for group in self.opt.param_groups:
                 group["lr"] = self._lr_at(step)
@@ -719,13 +1053,54 @@ class OPDTrainer:
                 torch.cuda.reset_peak_memory_stats(config.model.rollout_device)
 
             microsteps = []
-            for _ in range(grad_accum):
-                result = self._train_microstep(gradient_scale=1.0 / grad_accum)
-                if result is None:
-                    logger.warning("step %d: empty completion microstep; retrying once", step)
+            for microstep_index in range(grad_accum):
+                self.current_microstep = microstep_index
+                result = None
+                rejected_rollouts = 0
+                rejected_tokens = 0
+                retries = (
+                    config.tutoring.empty_microstep_retries
+                    if config.train.loss_fn == "guided_ce"
+                    else 1
+                )
+                for retry in range(retries + 1):
                     result = self._train_microstep(gradient_scale=1.0 / grad_accum)
+                    if result is not None:
+                        break
+                    empty_stats = getattr(self, "last_empty_guided_stats", {})
+                    rejected_rollouts += empty_stats.get(
+                        "rejected_no_teacher_rollouts", 0
+                    )
+                    rejected_tokens += empty_stats.get(
+                        "rejected_no_teacher_student_tokens", 0
+                    )
+                    if retry < retries:
+                        logger.warning(
+                            "step %d microstep %d: no teacher intervention; "
+                            "retrying (%d/%d)",
+                            step,
+                            microstep_index,
+                            retry + 1,
+                            retries,
+                        )
                 if result is None:
-                    raise RuntimeError("two consecutive empty rollout microsteps")
+                    raise RuntimeError(
+                        "guided microstep exhausted bounded no-intervention retries"
+                    )
+                result["rejected_no_teacher_rollouts"] = (
+                    result.get("rejected_no_teacher_rollouts", 0)
+                    + rejected_rollouts
+                )
+                result["rejected_no_teacher_student_tokens"] = (
+                    result.get("rejected_no_teacher_student_tokens", 0)
+                    + rejected_tokens
+                )
+                result["rollout_count"] += rejected_rollouts
+                result["student_generated_tokens"] += rejected_tokens
+                result["trajectory_tokens"] = (
+                    result.get("trajectory_tokens", 0) + rejected_tokens
+                )
+                result["empty_microstep_retries"] = retry
                 microsteps.append(result)
 
             grad_norm = torch.nn.utils.clip_grad_norm_(
@@ -736,6 +1111,15 @@ class OPDTrainer:
             if not math.isfinite(grad_norm_value) or grad_norm_value <= 0:
                 raise FloatingPointError(f"invalid LoRA gradient norm: {grad_norm_value}")
             self.opt.step()
+
+            guided_post = None
+            if config.train.loss_fn == "guided_ce":
+                guided_rollouts = [
+                    rollout
+                    for item in microsteps
+                    for rollout in item["_guided_rollouts"]
+                ]
+                guided_post = self._measure_guided_rollouts(guided_rollouts)
             if self.rollout_worker is not None:
                 self.policy_version += 1
                 self.last_sync_metrics = self.rollout_worker.sync_from(
@@ -755,7 +1139,7 @@ class OPDTrainer:
                 "teacher_student_agreement",
             }
             metrics = {
-                key: sum(item[key] * item["teacher_anchor_positions"] for item in microsteps) / total_anchors
+                key: sum(item.get(key, 0.0) * item["teacher_anchor_positions"] for item in microsteps) / total_anchors
                 for key in mean_keys
             }
             if metrics["residual_mass"] > 0.20:
@@ -771,7 +1155,42 @@ class OPDTrainer:
                     "student_generated_tokens": total_tokens,
                     "teacher_anchor_positions": total_anchors,
                     "teacher_scored_tokens": sum(item["teacher_scored_tokens"] for item in microsteps),
+                    "teacher_inserted_tokens": sum(
+                        item.get("teacher_inserted_tokens", 0) for item in microsteps
+                    ),
+                    "teacher_guidance_groups": sum(
+                        item.get("teacher_guidance_groups", 0) for item in microsteps
+                    ),
+                    "teacher_nonempty_groups": sum(
+                        item.get("teacher_nonempty_groups", 0) for item in microsteps
+                    ),
+                    "guided_rollout_count": sum(
+                        item.get("guided_rollout_count", item["rollout_count"])
+                        for item in microsteps
+                    ),
+                    "rejected_no_teacher_rollouts": sum(
+                        item.get("rejected_no_teacher_rollouts", 0)
+                        for item in microsteps
+                    ),
+                    "rejected_no_teacher_student_tokens": sum(
+                        item.get("rejected_no_teacher_student_tokens", 0)
+                        for item in microsteps
+                    ),
+                    "paired_student_only_tokens": sum(
+                        item.get("paired_student_only_tokens", 0)
+                        for item in microsteps
+                    ),
+                    "empty_microstep_retries": sum(
+                        item.get("empty_microstep_retries", 0)
+                        for item in microsteps
+                    ),
                     "teacher_requests": sum(item["teacher_requests"] for item in microsteps),
+                    "teacher_successful_requests": sum(
+                        item.get("teacher_successful_requests", 0) for item in microsteps
+                    ),
+                    "teacher_failures": sum(
+                        item.get("teacher_failures", 0) for item in microsteps
+                    ),
                     "teacher_wall_clock_ms": sum(item["teacher_wall_clock_ms"] for item in microsteps),
                     "rollout/generation_ms": sum(item["rollout_generation_ms"] for item in microsteps),
                     "rollout/student_topk_ms": sum(item["rollout_student_topk_ms"] for item in microsteps),
@@ -785,6 +1204,59 @@ class OPDTrainer:
                     "lr": self.opt.param_groups[0]["lr"],
                 }
             )
+            if config.train.loss_fn == "guided_ce" and guided_post is not None:
+                pre_teacher_nll = sum(
+                    item["teacher_token_nll_pre"] * item["teacher_inserted_tokens"]
+                    for item in microsteps
+                ) / total_anchors
+                pre_training_nll = sum(
+                    item["training_target_nll_pre"] * item["teacher_inserted_tokens"]
+                    for item in microsteps
+                ) / total_anchors
+                pre_top1 = sum(
+                    item["teacher_token_top1_pre"] * item["teacher_inserted_tokens"]
+                    for item in microsteps
+                ) / total_anchors
+                metrics.update(
+                    {
+                        "teacher_token_nll_pre": pre_teacher_nll,
+                        "teacher_token_nll_post": guided_post["teacher_token_nll"],
+                        "teacher_token_nll_delta": (
+                            guided_post["teacher_token_nll"] - pre_teacher_nll
+                        ),
+                        "teacher_token_nll_decreased": float(
+                            guided_post["teacher_token_nll"] < pre_teacher_nll
+                        ),
+                        "training_target_nll_pre": pre_training_nll,
+                        "training_target_nll_post": guided_post["training_target_nll"],
+                        "training_target_nll_delta": (
+                            guided_post["training_target_nll"] - pre_training_nll
+                        ),
+                        "teacher_token_top1_pre": pre_top1,
+                        "teacher_token_top1_post": guided_post[
+                            "teacher_token_top1_agreement"
+                        ],
+                        "trajectory_tokens": sum(
+                            item["trajectory_tokens"] for item in microsteps
+                        ),
+                        "teacher_group_nonempty_rate": (
+                            sum(item["teacher_nonempty_groups"] for item in microsteps)
+                            / sum(item["teacher_guidance_groups"] for item in microsteps)
+                        ),
+                        "teacher_intervention_coverage": (
+                            sum(item["guided_rollout_count"] for item in microsteps)
+                            / total_rollouts
+                        ),
+                        "teacher_request_success_rate": (
+                            sum(item["teacher_successful_requests"] for item in microsteps)
+                            / max(1, sum(item["teacher_requests"] for item in microsteps))
+                        ),
+                        "teacher_circuit_breaker_open": float(
+                            getattr(self.teacher_backend, "consecutive_failures", 0)
+                            >= getattr(self.teacher_backend, "circuit_breaker_failures", 3)
+                        ),
+                    }
+                )
             if str(self.device).startswith("cuda"):
                 metrics["student/peak_vram_mib"] = torch.cuda.max_memory_allocated(self.device) / 1024**2
             if config.model.rollout_device and str(config.model.rollout_device).startswith("cuda"):
@@ -815,8 +1287,11 @@ class OPDTrainer:
                 )
                 self._track(eval_metrics, step)
 
-            if config.train.save_steps and step and step % config.train.save_steps == 0:
-                self._save(f"step_{step}", step=step)
+            checkpoint_name = intermediate_checkpoint_name(
+                step, config.train.save_steps, config.train.steps
+            )
+            if checkpoint_name is not None:
+                self._save(checkpoint_name, step=step)
 
         eval_metrics = self._evaluate()
         final_step = max(self.start_step - 1, config.train.steps - 1)

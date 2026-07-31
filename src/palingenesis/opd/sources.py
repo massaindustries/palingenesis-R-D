@@ -155,9 +155,19 @@ class ChatMessagesSource:
             for line in f:
                 if not line.strip():
                     continue
-                messages = json.loads(line)["messages"]
+                raw = json.loads(line)
+                messages = raw["messages"]
                 if messages and messages[-1]["role"] == "user":
-                    rows.append(messages)
+                    rows.append(
+                        {
+                            "messages": messages,
+                            "meta": {
+                                key: raw[key]
+                                for key in ("id", "prompt_hash", "entry_point", "split")
+                                if key in raw
+                            },
+                        }
+                    )
                 else:
                     skipped += 1
         if skipped:
@@ -170,11 +180,27 @@ class ChatMessagesSource:
             with open(config.data.dev_prompts_path) as f:
                 for line in f:
                     if line.strip():
-                        messages = json.loads(line)["messages"]
+                        raw = json.loads(line)
+                        messages = raw["messages"]
                         if messages and messages[-1]["role"] == "user":
-                            dev_rows.append(messages)
-            train_hashes = {question_hash(json.dumps(m, ensure_ascii=False)) for m in rows}
-            dev_hashes = {question_hash(json.dumps(m, ensure_ascii=False)) for m in dev_rows}
+                            dev_rows.append(
+                                {
+                                    "messages": messages,
+                                    "meta": {
+                                        key: raw[key]
+                                        for key in ("id", "prompt_hash", "entry_point", "split")
+                                        if key in raw
+                                    },
+                                }
+                            )
+            train_hashes = {
+                question_hash(json.dumps(row["messages"], ensure_ascii=False))
+                for row in rows
+            }
+            dev_hashes = {
+                question_hash(json.dumps(row["messages"], ensure_ascii=False))
+                for row in dev_rows
+            }
             overlap = train_hashes & dev_hashes
             if overlap:
                 raise ValueError(f"Explicit train/dev prompts overlap by {len(overlap)} normalized hashes")
@@ -182,18 +208,38 @@ class ChatMessagesSource:
             self.dev_rows = dev_rows
         else:
             # deterministic dev split by content hash (same idea as split_pool)
-            by_hash = {question_hash(json.dumps(m, ensure_ascii=False)): m for m in rows}
+            by_hash = {
+                question_hash(json.dumps(row["messages"], ensure_ascii=False)): row
+                for row in rows
+            }
             dev_hashes = sorted(by_hash)[: config.data.dev_size]
             dev_set = set(dev_hashes)
             self.dev_rows = [by_hash[h] for h in dev_hashes]
-            self.train_rows = [m for m in rows if question_hash(json.dumps(m, ensure_ascii=False)) not in dev_set]
+            self.train_rows = [
+                row
+                for row in rows
+                if question_hash(json.dumps(row["messages"], ensure_ascii=False))
+                not in dev_set
+            ]
         logger.info("Chat prompts: %d train / %d dev", len(self.train_rows), len(self.dev_rows))
 
     def sample(self):
-        return self.rng.choice(self.train_rows), self.config.sampling.max_new_tokens, {}
+        row = self.rng.choice(self.train_rows)
+        return (
+            row["messages"],
+            self.config.sampling.max_new_tokens,
+            dict(row["meta"]),
+        )
 
     def evaluate(self, engine: Engine) -> dict[str, float]:
-        rows = self.dev_rows[: self.config.train.eval_dev_samples]
+        if self.config.train.loss_fn == "guided_ce":
+            # Executable-code checkpoint evaluation is performed by the
+            # experiment harness, never approximated with the old KL metric.
+            return {}
+        rows = [
+            row["messages"]
+            for row in self.dev_rows[: self.config.train.eval_dev_samples]
+        ]
         return engine.dev_kl(rows, self.config.sampling.max_new_tokens)
 
     def batch_stats(self, rollouts):
