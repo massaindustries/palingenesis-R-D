@@ -63,8 +63,10 @@ def letter_token_ids(tok, letters: str = "ABCDEFGHIJ") -> dict[str, int]:
     for letter in letters:
         enc = tok.encode(letter, add_special_tokens=False)
         if len(enc) != 1:
-            raise ValueError(f"option letter {letter!r} encodes to {len(enc)} tokens; "
-                             "single-forward scoring requires single-token letters")
+            raise ValueError(
+                f"option letter {letter!r} encodes to {len(enc)} tokens; "
+                "single-forward scoring requires single-token letters"
+            )
         ids[letter] = enc[0]
     return ids
 
@@ -185,7 +187,10 @@ class PromptRenderer:
         else:
             shots = []
         messages = build_messages(
-            row, few_shots=shots, fast=fast, system_message=self.system_message,
+            row,
+            few_shots=shots,
+            fast=fast,
+            system_message=self.system_message,
             template=self.fast_template if fast else self.cot_template,
         )
         return messages, row, fast

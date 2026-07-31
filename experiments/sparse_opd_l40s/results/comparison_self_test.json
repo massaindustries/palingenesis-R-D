@@ -1,0 +1,26 @@
+{
+  "base_evaluation": "/opt/sparse-opd/runs/pilot/20260730T152905Z_base_student_seed0_7d6f8ac/evaluation",
+  "candidate_evaluation": "/opt/sparse-opd/runs/pilot/20260730T152905Z_base_student_seed0_7d6f8ac/evaluation",
+  "tasks": 257,
+  "base_pass_at_1": 0.603112840466926,
+  "candidate_pass_at_1": 0.603112840466926,
+  "absolute_pass_at_1_change": 0.0,
+  "relative_pass_at_1_change": 0.0,
+  "paired_bootstrap_ci95": [
+    0.0,
+    0.0
+  ],
+  "mcnemar": {
+    "candidate_only_passes": 0,
+    "base_only_passes": 0,
+    "both_pass": 155,
+    "both_fail": 102,
+    "two_sided_exact_p": 1.0
+  },
+  "quality_collapse_kill_switch_triggered": false,
+  "bootstrap": {
+    "samples": 100,
+    "seed": 0,
+    "unit": "task-level paired resampling"
+  }
+}

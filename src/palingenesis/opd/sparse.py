@@ -61,9 +61,7 @@ def select_anchor_positions(
     if anchor_window_tokens <= 0:
         raise ValueError("anchor_window_tokens must be positive")
     expanded = {
-        position
-        for anchor in anchors
-        for position in range(max(0, anchor - anchor_window_tokens + 1), anchor + 1)
+        position for anchor in anchors for position in range(max(0, anchor - anchor_window_tokens + 1), anchor + 1)
     }
     ordered = sorted(expanded)
     if max_anchors_per_sequence <= 0:
@@ -141,4 +139,3 @@ def sparse_anchor_rkl(
         clipped_probabilities=int(clipped.detach().item()),
     )
     return per_anchor.mean(), stats
-

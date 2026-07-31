@@ -1,0 +1,273 @@
+{
+  "compatible": true,
+  "seed": 20260730,
+  "sample_size": 500,
+  "student_vocab_size": 151643,
+  "teacher_vocab_size": 151643,
+  "token_id_mismatch_count": 0,
+  "special_tokens": {
+    "bos_token_id": {
+      "student": null,
+      "teacher": null
+    },
+    "eos_token_id": {
+      "student": 151645,
+      "teacher": 151645
+    },
+    "pad_token_id": {
+      "student": 151643,
+      "teacher": 151643
+    },
+    "unk_token_id": {
+      "student": null,
+      "teacher": null
+    }
+  },
+  "added_vocab_equal": true,
+  "probes": [
+    {
+      "text": "Hello world",
+      "passed": true,
+      "student_ids": [
+        9707,
+        1879
+      ],
+      "teacher_ids": [
+        9707,
+        1879
+      ],
+      "student_decoded": "Hello world",
+      "teacher_decoded": "Hello world"
+    },
+    {
+      "text": "L'intelligenza artificiale",
+      "passed": true,
+      "student_ids": [
+        43,
+        54524,
+        613,
+        6433,
+        4360,
+        1947,
+        1086,
+        19893
+      ],
+      "teacher_ids": [
+        43,
+        54524,
+        613,
+        6433,
+        4360,
+        1947,
+        1086,
+        19893
+      ],
+      "student_decoded": "L'intelligenza artificiale",
+      "teacher_decoded": "L'intelligenza artificiale"
+    },
+    {
+      "text": "def fibonacci(n: int) -> int:\n    return n",
+      "passed": true,
+      "student_ids": [
+        750,
+        75698,
+        1445,
+        25,
+        526,
+        8,
+        1464,
+        526,
+        510,
+        262,
+        470,
+        308
+      ],
+      "teacher_ids": [
+        750,
+        75698,
+        1445,
+        25,
+        526,
+        8,
+        1464,
+        526,
+        510,
+        262,
+        470,
+        308
+      ],
+      "student_decoded": "def fibonacci(n: int) -> int:\n    return n",
+      "teacher_decoded": "def fibonacci(n: int) -> int:\n    return n"
+    },
+    {
+      "text": "é à è ò ù",
+      "passed": true,
+      "student_ids": [
+        963,
+        3784,
+        11422,
+        1683,
+        110,
+        1683,
+        117
+      ],
+      "teacher_ids": [
+        963,
+        3784,
+        11422,
+        1683,
+        110,
+        1683,
+        117
+      ],
+      "student_decoded": "é à è ò ù",
+      "teacher_decoded": "é à è ò ù"
+    },
+    {
+      "text": "JSON: {\"value\": 42}",
+      "passed": true,
+      "student_ids": [
+        5370,
+        25,
+        5212,
+        957,
+        788,
+        220,
+        19,
+        17,
+        92
+      ],
+      "teacher_ids": [
+        5370,
+        25,
+        5212,
+        957,
+        788,
+        220,
+        19,
+        17,
+        92
+      ],
+      "student_decoded": "JSON: {\"value\": 42}",
+      "teacher_decoded": "JSON: {\"value\": 42}"
+    },
+    {
+      "text": "tabs,\tspaces, newline\nand triple backticks\n```python\nprint('ok')\n```",
+      "passed": true,
+      "student_ids": [
+        30993,
+        11,
+        1903,
+        27338,
+        11,
+        39027,
+        198,
+        437,
+        23725,
+        1182,
+        35078,
+        198,
+        73594,
+        12669,
+        198,
+        1350,
+        492,
+        562,
+        1305,
+        73594
+      ],
+      "teacher_ids": [
+        30993,
+        11,
+        1903,
+        27338,
+        11,
+        39027,
+        198,
+        437,
+        23725,
+        1182,
+        35078,
+        198,
+        73594,
+        12669,
+        198,
+        1350,
+        492,
+        562,
+        1305,
+        73594
+      ],
+      "student_decoded": "tabs,\tspaces, newline\nand triple backticks\n```python\nprint('ok')\n```",
+      "teacher_decoded": "tabs,\tspaces, newline\nand triple backticks\n```python\nprint('ok')\n```"
+    },
+    {
+      "text": "Unicode: Ελληνικά, русский, 中文, العربية, 👩🏽‍💻",
+      "passed": true,
+      "student_ids": [
+        33920,
+        25,
+        7851,
+        243,
+        33486,
+        33486,
+        41424,
+        33269,
+        29762,
+        67337,
+        74134,
+        11,
+        18108,
+        43055,
+        126302,
+        11,
+        72858,
+        16744,
+        11,
+        129071,
+        11,
+        61804,
+        102,
+        145375,
+        378,
+        235,
+        145851
+      ],
+      "teacher_ids": [
+        33920,
+        25,
+        7851,
+        243,
+        33486,
+        33486,
+        41424,
+        33269,
+        29762,
+        67337,
+        74134,
+        11,
+        18108,
+        43055,
+        126302,
+        11,
+        72858,
+        16744,
+        11,
+        129071,
+        11,
+        61804,
+        102,
+        145375,
+        378,
+        235,
+        145851
+      ],
+      "student_decoded": "Unicode: Ελληνικά, русский, 中文, العربية, 👩🏽‍💻",
+      "teacher_decoded": "Unicode: Ελληνικά, русский, 中文, العربية, 👩🏽‍💻"
+    }
+  ],
+  "failures": [],
+  "student": "/opt/sparse-opd/models/Qwen3-4B",
+  "teacher": "/opt/sparse-opd/models/Qwen3-Coder-Next-FP8",
+  "captured_at": "2026-07-30T14:42:12.521036+00:00"
+}

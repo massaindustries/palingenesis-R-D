@@ -99,9 +99,7 @@ def _valid_sglang_row():
     return {
         "meta_info": {
             "output_top_logprobs": [[[math.log(0.5), 2], [math.log(0.3), 1]]],
-            "output_token_ids_logprobs": [
-                [[math.log(0.3), 1], [math.log(0.1), 3]]
-            ],
+            "output_token_ids_logprobs": [[[math.log(0.3), 1], [math.log(0.1), 3]]],
         }
     }
 
@@ -137,4 +135,3 @@ def test_sglang_backend_malformed_response_and_circuit_breaker():
     assert client.calls == 3
     with pytest.raises(RuntimeError, match="circuit breaker"):
         backend.score_anchors([query], top_k=1)
-

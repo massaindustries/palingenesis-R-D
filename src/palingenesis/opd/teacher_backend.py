@@ -121,10 +121,7 @@ class SGLangTeacherBackend:
             return []
         if self.consecutive_failures >= self.circuit_breaker_failures:
             raise RuntimeError("teacher circuit breaker is open")
-        requested = [
-            sorted(set(query.student_top_ids) | set(query.required_ids))
-            for query in queries
-        ]
+        requested = [sorted(set(query.student_top_ids) | set(query.required_ids)) for query in queries]
         payload = {
             "input_ids": [list(query.prefix_ids) for query in queries],
             "sampling_params": {
@@ -151,13 +148,8 @@ class SGLangTeacherBackend:
                 raw = response.json()
                 rows = raw if isinstance(raw, list) else [raw]
                 if len(rows) != len(queries):
-                    raise ValueError(
-                        f"teacher batch size mismatch: expected {len(queries)}, got {len(rows)}"
-                    )
-                scores = [
-                    self._parse_row(row, query, top_k)
-                    for row, query in zip(rows, queries)
-                ]
+                    raise ValueError(f"teacher batch size mismatch: expected {len(queries)}, got {len(rows)}")
+                scores = [self._parse_row(row, query, top_k) for row, query in zip(rows, queries)]
                 self.consecutive_failures = 0
                 self.successful_request_count += 1
                 return scores
@@ -165,10 +157,7 @@ class SGLangTeacherBackend:
                 last_error = error
                 self.failure_count += 1
                 self.consecutive_failures += 1
-                if (
-                    attempt >= self.max_retries
-                    or self.consecutive_failures >= self.circuit_breaker_failures
-                ):
+                if attempt >= self.max_retries or self.consecutive_failures >= self.circuit_breaker_failures:
                     break
                 time.sleep(self.retry_backoff_seconds * (2**attempt))
             finally:

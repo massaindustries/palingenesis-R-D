@@ -15,10 +15,12 @@ def sandbox_module():
 
 
 def test_sandbox_executes_tests(sandbox_module):
-    result = sandbox_module.run({
-        "code": "def add(a, b):\n    return a + b",
-        "tests": ["assert add(2, 3) == 5"],
-    })
+    result = sandbox_module.run(
+        {
+            "code": "def add(a, b):\n    return a + b",
+            "tests": ["assert add(2, 3) == 5"],
+        }
+    )
     assert result["syntax_success"]
     assert result["runtime_success"]
     assert result["test_pass"]
@@ -26,11 +28,12 @@ def test_sandbox_executes_tests(sandbox_module):
 
 
 def test_sandbox_timeout(sandbox_module):
-    result = sandbox_module.run({
-        "code": "while True:\n    pass",
-        "tests": [],
-        "timeout": 0.1,
-    })
+    result = sandbox_module.run(
+        {
+            "code": "while True:\n    pass",
+            "tests": [],
+            "timeout": 0.1,
+        }
+    )
     assert result["timeout"]
     assert not result["test_pass"]
-

@@ -66,20 +66,10 @@ class TransformersRolloutWorker:
     def sync_from(self, trainer_model, policy_version: int) -> dict[str, float | int | str]:
         """Synchronize only trainable LoRA tensors through measured host staging."""
         started = time.perf_counter()
-        source = {
-            name: parameter
-            for name, parameter in trainer_model.named_parameters()
-            if parameter.requires_grad
-        }
-        target = {
-            name: parameter
-            for name, parameter in self.model.named_parameters()
-            if "lora_" in name
-        }
+        source = {name: parameter for name, parameter in trainer_model.named_parameters() if parameter.requires_grad}
+        target = {name: parameter for name, parameter in self.model.named_parameters() if "lora_" in name}
         if source.keys() != target.keys():
-            raise RuntimeError(
-                f"adapter parameter mismatch: trainer={len(source)} rollout={len(target)}"
-            )
+            raise RuntimeError(f"adapter parameter mismatch: trainer={len(source)} rollout={len(target)}")
         with torch.no_grad():
             for name in sorted(source):
                 # CUDA P2P is unavailable on this host. Explicit CPU staging
@@ -110,8 +100,7 @@ class TransformersRolloutWorker:
     ) -> RolloutResult:
         if self.policy_version != expected_policy_version:
             raise RuntimeError(
-                f"policy version mismatch: expected {expected_policy_version}, "
-                f"rollout has {self.policy_version}"
+                f"policy version mismatch: expected {expected_policy_version}, rollout has {self.policy_version}"
             )
         width = max(len(prompt) for prompt in prompt_ids)
         ids = torch.full(
@@ -123,8 +112,8 @@ class TransformersRolloutWorker:
         mask = torch.zeros_like(ids)
         for row, prompt in enumerate(prompt_ids):
             values = torch.tensor(prompt, dtype=torch.long, device=self.device)
-            ids[row, width - len(prompt):] = values
-            mask[row, width - len(prompt):] = 1
+            ids[row, width - len(prompt) :] = values
+            mask[row, width - len(prompt) :] = 1
         decode = (
             {"do_sample": False}
             if greedy
@@ -150,10 +139,7 @@ class TransformersRolloutWorker:
             )
         torch.cuda.synchronize(self.device)
         generation_ms = (time.perf_counter() - generation_started) * 1000
-        completions = [
-            self._clean(generated[row, width:].tolist())
-            for row in range(len(prompt_ids))
-        ]
+        completions = [self._clean(generated[row, width:].tolist()) for row in range(len(prompt_ids))]
 
         topk_started = time.perf_counter()
         top_ids = self._topk_at_anchors(prompt_ids, completions)
@@ -199,15 +185,9 @@ class TransformersRolloutWorker:
             mask = torch.ones_like(ids)
             with torch.autocast("cuda", dtype=torch.bfloat16):
                 hidden = base.model(input_ids=ids, attention_mask=mask).last_hidden_state
-                selected = torch.stack([
-                    hidden[0, len(prompt) + anchor - 1]
-                    for anchor in anchors
-                ])
+                selected = torch.stack([hidden[0, len(prompt) + anchor - 1] for anchor in anchors])
                 logits = base.lm_head(selected)
             k = min(self.tutoring.student_top_k, logits.shape[-1])
             indices = torch.topk(logits.float(), k=k, dim=-1).indices.cpu().tolist()
-            output.append({
-                anchor: tuple(token_ids)
-                for anchor, token_ids in zip(anchors, indices)
-            })
+            output.append({anchor: tuple(token_ids) for anchor, token_ids in zip(anchors, indices)})
         return output

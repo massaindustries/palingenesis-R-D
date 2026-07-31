@@ -1,0 +1,27 @@
+{
+  "captured_at": "2026-07-30T16:14:03.030742+00:00",
+  "assessment": "Ready to share",
+  "dataset": {
+    "source": "google-research-datasets/mbpp",
+    "revision": "4bb6404fdc6cacfda99d4ac4205087b89d32030c",
+    "manifest_leakage_check": "pass",
+    "files_checked": 6
+  },
+  "teacher_stability": {
+    "requests": 100,
+    "failures": 0
+  },
+  "runs": [
+    {
+      "run": "runs/smoke/20260730T161232Z_pilot_scale_interval32_one_step_seed0_7d6f8ac",
+      "expected_steps": 1,
+      "observed_steps": 1,
+      "unique_steps": 1,
+      "max_student_residual_mass": 2.6226043701171877e-07,
+      "max_policy_staleness": 0,
+      "longest_increasing_vram_streak": 1,
+      "ready": true
+    }
+  ],
+  "issues": []
+}

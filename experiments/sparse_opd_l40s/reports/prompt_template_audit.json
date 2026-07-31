@@ -1,0 +1,19 @@
+{
+  "question": "Does exposing the callable signature remove function-name guessing without exposing tests or implementation?",
+  "prompt_v1": {
+    "path": "/opt/sparse-opd/data/archive/prompt_v1_20260730T152800Z/offline/teacher_eval_pilot_test.jsonl",
+    "tasks": 256,
+    "syntax_success_rate": 0.95703125,
+    "required_entry_point_defined": 29,
+    "required_entry_point_defined_rate": 0.11328125
+  },
+  "prompt_v2": {
+    "path": "/opt/sparse-opd/data/offline/teacher_eval_pilot_test_v2.jsonl",
+    "tasks": 257,
+    "syntax_success_rate": 0.9649805447470817,
+    "required_entry_point_defined": 248,
+    "required_entry_point_defined_rate": 0.9649805447470817
+  },
+  "absolute_entry_point_compliance_change": 0.8516992947470817,
+  "interpretation": "Prompt-v1 executable quality is confounded by a hidden interface. Prompt-v2 is the official pilot template."
+}

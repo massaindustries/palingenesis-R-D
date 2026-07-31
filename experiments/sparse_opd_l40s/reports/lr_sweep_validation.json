@@ -1,0 +1,47 @@
+{
+  "captured_at": "2026-07-30T15:54:57.495202+00:00",
+  "assessment": "Ready to share",
+  "dataset": {
+    "source": "google-research-datasets/mbpp",
+    "revision": "4bb6404fdc6cacfda99d4ac4205087b89d32030c",
+    "manifest_leakage_check": "pass",
+    "files_checked": 6
+  },
+  "teacher_stability": {
+    "requests": 100,
+    "failures": 0
+  },
+  "runs": [
+    {
+      "run": "/opt/sparse-opd/runs/sweep/20260730T153923Z_lr_mini_sweep_interval32_seed0_7d6f8ac/lr_2e-5",
+      "expected_steps": 20,
+      "observed_steps": 20,
+      "unique_steps": 20,
+      "max_student_residual_mass": 9.238719940185547e-07,
+      "max_policy_staleness": 0,
+      "longest_increasing_vram_streak": 4,
+      "ready": true
+    },
+    {
+      "run": "/opt/sparse-opd/runs/sweep/20260730T153923Z_lr_mini_sweep_interval32_seed0_7d6f8ac/lr_5e-5",
+      "expected_steps": 20,
+      "observed_steps": 20,
+      "unique_steps": 20,
+      "max_student_residual_mass": 3.1888484954833984e-06,
+      "max_policy_staleness": 0,
+      "longest_increasing_vram_streak": 4,
+      "ready": true
+    },
+    {
+      "run": "/opt/sparse-opd/runs/sweep/20260730T153923Z_lr_mini_sweep_interval32_seed0_7d6f8ac/lr_1e-4",
+      "expected_steps": 20,
+      "observed_steps": 20,
+      "unique_steps": 20,
+      "max_student_residual_mass": 8.940696716308594e-07,
+      "max_policy_staleness": 0,
+      "longest_increasing_vram_streak": 4,
+      "ready": true
+    }
+  ],
+  "issues": []
+}

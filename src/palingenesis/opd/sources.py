@@ -108,9 +108,13 @@ class McqaPoolSource:
 
         def _acc(fast: bool, template, max_new_tokens: int, last: bool) -> float:
             prompts = [
-                build_messages(r, few_shots=self.reference_shots, fast=fast,
-                               system_message=self.config.data.system_message or None,
-                               template=template)
+                build_messages(
+                    r,
+                    few_shots=self.reference_shots,
+                    fast=fast,
+                    system_message=self.config.data.system_message or None,
+                    template=template,
+                )
                 for r in rows
             ]
             texts = engine.greedy_generate(prompts, max_new_tokens=max_new_tokens)
@@ -119,16 +123,15 @@ class McqaPoolSource:
 
         metrics = {"dev_acc": _acc(True, self.fast_template, 8, last=False)}
         if self.config.sampling.cot_fraction > 0:
-            metrics["dev_acc_cot"] = _acc(
-                False, self.cot_template, self.config.sampling.cot_max_new_tokens, last=True
-            )
+            metrics["dev_acc_cot"] = _acc(False, self.cot_template, self.config.sampling.cot_max_new_tokens, last=True)
         return metrics
 
     def batch_stats(self, rollouts):
         if not rollouts:
             return {}
         ok = sum(
-            1 for meta, text in rollouts
+            1
+            for meta, text in rollouts
             if (letter := extract_letter(text)) and letter in {le for le, _ in meta["row"]["options"]}
         )
         return {"format_ok": ok / len(rollouts)}
@@ -174,9 +177,7 @@ class ChatMessagesSource:
             dev_hashes = {question_hash(json.dumps(m, ensure_ascii=False)) for m in dev_rows}
             overlap = train_hashes & dev_hashes
             if overlap:
-                raise ValueError(
-                    f"Explicit train/dev prompts overlap by {len(overlap)} normalized hashes"
-                )
+                raise ValueError(f"Explicit train/dev prompts overlap by {len(overlap)} normalized hashes")
             self.train_rows = rows
             self.dev_rows = dev_rows
         else:
@@ -185,8 +186,7 @@ class ChatMessagesSource:
             dev_hashes = sorted(by_hash)[: config.data.dev_size]
             dev_set = set(dev_hashes)
             self.dev_rows = [by_hash[h] for h in dev_hashes]
-            self.train_rows = [m for m in rows
-                               if question_hash(json.dumps(m, ensure_ascii=False)) not in dev_set]
+            self.train_rows = [m for m in rows if question_hash(json.dumps(m, ensure_ascii=False)) not in dev_set]
         logger.info("Chat prompts: %d train / %d dev", len(self.train_rows), len(self.dev_rows))
 
     def sample(self):

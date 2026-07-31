@@ -1,0 +1,27 @@
+{
+  "captured_at": "2026-07-30T15:38:20.177997+00:00",
+  "assessment": "Ready to share",
+  "dataset": {
+    "source": "google-research-datasets/mbpp",
+    "revision": "4bb6404fdc6cacfda99d4ac4205087b89d32030c",
+    "manifest_leakage_check": "pass",
+    "files_checked": 6
+  },
+  "teacher_stability": {
+    "requests": 100,
+    "failures": 0
+  },
+  "runs": [
+    {
+      "run": "/opt/sparse-opd/runs/pilot/20260730T152905Z_base_student_seed0_7d6f8ac",
+      "expected_steps": 0,
+      "observed_steps": 0,
+      "unique_steps": 0,
+      "max_student_residual_mass": 0.0,
+      "max_policy_staleness": 0,
+      "longest_increasing_vram_streak": 0,
+      "ready": true
+    }
+  ],
+  "issues": []
+}

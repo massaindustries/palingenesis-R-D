@@ -49,6 +49,7 @@ def load_benchmark_hashes(path: str, field: str = "question") -> set[str]:
 # Row validation (for adapter authors)
 # ---------------------------------------------------------------------------
 
+
 def valid_row(question: str, options: list[tuple[str, str]], answer: str) -> bool:
     if not question or not (2 <= len(options) <= 10):
         return False
@@ -64,6 +65,7 @@ def valid_row(question: str, options: list[tuple[str, str]], answer: str) -> boo
 # ---------------------------------------------------------------------------
 # Pool loading
 # ---------------------------------------------------------------------------
+
 
 def write_pool(rows: Iterable[dict[str, Any]], path: str) -> int:
     n = 0

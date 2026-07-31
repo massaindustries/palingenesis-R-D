@@ -199,15 +199,21 @@ class OPDTrainer:
             targets = list(adapter.target_modules)
         else:
             candidates = {
-                "q_proj", "k_proj", "v_proj", "o_proj",
-                "gate_proj", "up_proj", "down_proj",
+                "q_proj",
+                "k_proj",
+                "v_proj",
+                "o_proj",
+                "gate_proj",
+                "up_proj",
+                "down_proj",
             }
-            targets = sorted({
-                name.rsplit(".", 1)[-1]
-                for name, module in model.named_modules()
-                if isinstance(module, torch.nn.Linear)
-                and name.rsplit(".", 1)[-1] in candidates
-            })
+            targets = sorted(
+                {
+                    name.rsplit(".", 1)[-1]
+                    for name, module in model.named_modules()
+                    if isinstance(module, torch.nn.Linear) and name.rsplit(".", 1)[-1] in candidates
+                }
+            )
             if not targets:
                 raise RuntimeError("could not find Qwen attention/MLP projection modules for LoRA")
             adapter.target_modules = targets
@@ -270,15 +276,14 @@ class OPDTrainer:
         ids = torch.full((len(prompts), T), self.s_pad, dtype=torch.long)
         mask = torch.zeros((len(prompts), T), dtype=torch.long)
         for j, p in enumerate(prompts):
-            ids[j, T - len(p):] = torch.tensor(p, dtype=torch.long)
-            mask[j, T - len(p):] = 1
+            ids[j, T - len(p) :] = torch.tensor(p, dtype=torch.long)
+            mask[j, T - len(p) :] = 1
         return ids, mask, T
 
     # -------------------------------------------------------------- generation
 
     @torch.no_grad()
-    def _generate(self, prompt_ids: list[list[int]], max_new_tokens: int,
-                  greedy: bool = False) -> list[list[int]]:
+    def _generate(self, prompt_ids: list[list[int]], max_new_tokens: int, greedy: bool = False) -> list[list[int]]:
         """One completion per prompt (already replicated for group_size), cleaned."""
         if self.rollout_worker is not None:
             return self.rollout_worker.generate(
@@ -294,7 +299,8 @@ class OPDTrainer:
             chunk = prompt_ids[i : i + sampling.gen_micro_seqs]
             ids, mask, T = self._left_pad(chunk)
             decode_kwargs = (
-                dict(do_sample=False) if greedy
+                dict(do_sample=False)
+                if greedy
                 else dict(
                     do_sample=True,
                     temperature=sampling.temperature,
@@ -302,10 +308,10 @@ class OPDTrainer:
                     top_k=transformers_top_k(sampling.top_k),
                 )
             )
-            with torch.autocast(self.device.split(":")[0], dtype=torch.bfloat16,
-                                enabled=self.device != "cpu"):
+            with torch.autocast(self.device.split(":")[0], dtype=torch.bfloat16, enabled=self.device != "cpu"):
                 out = self.student.generate(
-                    ids.to(self.device), attention_mask=mask.to(self.device),
+                    ids.to(self.device),
+                    attention_mask=mask.to(self.device),
                     max_new_tokens=max_new_tokens,
                     eos_token_id=list(self.bridge.stop_ids),
                     pad_token_id=self.s_pad,
@@ -323,8 +329,7 @@ class OPDTrainer:
         """Greedy-decode one completion per conversation, decoded (stop token trimmed)."""
         prompts = [self._encode_prompt(self.s_tok, m) for m in messages_list]
         comps = self._generate(prompts, max_new_tokens, greedy=True)
-        return [self.s_tok.decode(c[:-1] if c and c[-1] in self.bridge.stop_ids else c)
-                for c in comps]
+        return [self.s_tok.decode(c[:-1] if c and c[-1] in self.bridge.stop_ids else c) for c in comps]
 
     @torch.no_grad()
     def dev_kl(self, messages_list, max_new_tokens: int) -> dict[str, float]:
@@ -347,8 +352,7 @@ class OPDTrainer:
                 _, n_tok, stats = self._loss_on_chunk(*self._chunk_args(chunk))
             total_kl += stats["kl"] * n_tok
             total_tok += n_tok
-        return {"dev_kl": total_kl / total_tok,
-                "dev_len": total_tok / len(rollouts)}
+        return {"dev_kl": total_kl / total_tok, "dev_len": total_tok / len(rollouts)}
 
     # ----------------------------------------------------------------- scoring
 
@@ -371,8 +375,7 @@ class OPDTrainer:
         """
         ids, mask = OPDTrainer._right_pad(seqs, pad, device)
         # grad-vs-no-grad is decided by the caller's context, not here
-        ctx = (torch.autocast(autocast_dev, dtype=torch.bfloat16)
-               if autocast_dev else contextlib.nullcontext())
+        ctx = torch.autocast(autocast_dev, dtype=torch.bfloat16) if autocast_dev else contextlib.nullcontext()
         with ctx:
             backbone, lm_head = OPDTrainer._backbone_and_head(model)
             h = backbone(input_ids=ids, attention_mask=mask).last_hidden_state
@@ -388,19 +391,13 @@ class OPDTrainer:
     def _gather_anchor_logits(model, seqs, prediction_positions, pad, device, autocast_dev=None):
         """Gather next-token logits at arbitrary absolute prediction positions."""
         ids, mask = OPDTrainer._right_pad(seqs, pad, device)
-        ctx = (
-            torch.autocast(autocast_dev, dtype=torch.bfloat16)
-            if autocast_dev
-            else contextlib.nullcontext()
-        )
+        ctx = torch.autocast(autocast_dev, dtype=torch.bfloat16) if autocast_dev else contextlib.nullcontext()
         with ctx:
             backbone, lm_head = OPDTrainer._backbone_and_head(model)
             hidden = backbone(input_ids=ids, attention_mask=mask).last_hidden_state
-            selected = torch.stack([
-                hidden[row, position]
-                for row, positions in enumerate(prediction_positions)
-                for position in positions
-            ])
+            selected = torch.stack(
+                [hidden[row, position] for row, positions in enumerate(prediction_positions) for position in positions]
+            )
             return lm_head(selected)
 
     def _chunk_args(self, chunk):
@@ -422,13 +419,16 @@ class OPDTrainer:
         V = self.bridge.shared_vocab_size
 
         with torch.no_grad():
-            t_logits = self._gather_logits(
-                self.teacher, t_seqs, plens_t, lens, self.t_pad, self.teacher_device
-            )
+            t_logits = self._gather_logits(self.teacher, t_seqs, plens_t, lens, self.t_pad, self.teacher_device)
             logp_t = F.log_softmax(t_logits.float(), dim=-1).to(self.device)  # (N, V)
 
         s_logits = self._gather_logits(
-            self.student, s_seqs, plens_s, lens, self.s_pad, self.device,
+            self.student,
+            s_seqs,
+            plens_s,
+            lens,
+            self.s_pad,
+            self.device,
             autocast_dev=self.device.split(":")[0] if self.device != "cpu" else None,
         )
         logp_s_full = F.log_softmax(s_logits.float(), dim=-1)  # (N, student vocab)
@@ -483,22 +483,23 @@ class OPDTrainer:
             seqs.append(batch["s_prompt"] + completion[:-1])
             prediction_positions.append([len(batch["s_prompt"]) + anchor - 1 for anchor in anchors])
             completion_t = self.bridge.to_teacher(completion)
-            anchor_meta.extend(
-                (batch["t_prompt"] + completion_t[:anchor], anchor, batch)
-                for anchor in anchors
-            )
+            anchor_meta.extend((batch["t_prompt"] + completion_t[:anchor], anchor, batch) for anchor in anchors)
         if not anchor_meta:
             zero = next(self.student.parameters()).sum() * 0.0
-            return zero, 0, {
-                "kl": 0.0,
-                "sampled_kl": 0.0,
-                "residual_mass": 0.0,
-                "teacher_residual_mass": 0.0,
-                "clipped_probabilities": 0.0,
-                "output_entropy": 0.0,
-                "teacher_student_agreement": 0.0,
-                "teacher_scored_tokens": 0,
-            }
+            return (
+                zero,
+                0,
+                {
+                    "kl": 0.0,
+                    "sampled_kl": 0.0,
+                    "residual_mass": 0.0,
+                    "teacher_residual_mass": 0.0,
+                    "clipped_probabilities": 0.0,
+                    "output_entropy": 0.0,
+                    "teacher_student_agreement": 0.0,
+                    "teacher_scored_tokens": 0,
+                },
+            )
 
         logits = self._gather_anchor_logits(
             self.student,
@@ -513,10 +514,7 @@ class OPDTrainer:
             k=min(tutoring.student_top_k, logits.shape[-1]),
             dim=-1,
         ).indices
-        required_teacher_ids = tuple(sorted(
-            {self.t_tok.eos_token_id} | set(self.bridge.swap.values())
-            - {None}
-        ))
+        required_teacher_ids = tuple(sorted({self.t_tok.eos_token_id} | set(self.bridge.swap.values()) - {None}))
         queries = []
         for row, (prefix, anchor, batch) in enumerate(anchor_meta):
             provided = batch.get("student_top_ids", {}).get(anchor)
@@ -548,10 +546,7 @@ class OPDTrainer:
         teacher_scored_tokens = 0
         inverse_swap = {teacher: student for student, teacher in self.bridge.swap.items()}
         for row, score in enumerate(scores):
-            student_ids = [
-                inverse_swap.get(token_id, token_id)
-                for token_id in score.token_ids
-            ]
+            student_ids = [inverse_swap.get(token_id, token_id) for token_id in score.token_ids]
             ids = torch.tensor([student_ids], dtype=torch.long, device=self.device)
             teacher_logp = torch.tensor(
                 [score.logprobs],
@@ -576,8 +571,7 @@ class OPDTrainer:
                 int(student_top[row, 0]),
             )
             stat_weighted["teacher_student_agreement"] += float(
-                bool(score.teacher_top_ids)
-                and student_argmax_teacher == score.teacher_top_ids[0]
+                bool(score.teacher_top_ids) and student_argmax_teacher == score.teacher_top_ids[0]
             )
             teacher_scored_tokens += len(score.token_ids)
         count = len(losses)
@@ -598,12 +592,14 @@ class OPDTrainer:
             s_prompt = self._encode_prompt(self.s_tok, messages)
             t_prompt = self._encode_prompt(self.t_tok, messages)
             for _ in range(config.sampling.group_size):
-                batch.append({
-                    "s_prompt": s_prompt,
-                    "t_prompt": t_prompt,
-                    "mnt": mnt,
-                    "meta": meta,
-                })
+                batch.append(
+                    {
+                        "s_prompt": s_prompt,
+                        "t_prompt": t_prompt,
+                        "mnt": mnt,
+                        "meta": meta,
+                    }
+                )
 
         completions: dict[int, list[int]] = {}
         rollout_top_ids: dict[int, dict[int, tuple[int, ...]]] = {}
@@ -619,9 +615,7 @@ class OPDTrainer:
                     expected_policy_version=self.policy_version,
                 )
                 if result.policy_version != self.policy_version:
-                    raise RuntimeError(
-                        f"stale rollout {result.policy_version}, expected {self.policy_version}"
-                    )
+                    raise RuntimeError(f"stale rollout {result.policy_version}, expected {self.policy_version}")
                 comps = result.completions
                 rollout_top_ids.update(dict(zip(indices, result.student_top_ids)))
                 rollout_generation_ms += result.generation_ms
@@ -632,26 +626,24 @@ class OPDTrainer:
         for index, top_ids in rollout_top_ids.items():
             batch[index]["student_top_ids"] = top_ids
 
-        rollouts = [
-            (batch[i], completions[i])
-            for i in range(len(batch))
-            if completions[i]
-        ]
+        rollouts = [(batch[i], completions[i]) for i in range(len(batch)) if completions[i]]
         if not rollouts:
             return None
 
         student_tokens = sum(len(completion) for _, completion in rollouts)
         anchors = (
             sum(
-                len(select_anchor_positions(
-                    completion,
-                    config.tutoring.interval_tokens,
-                    stop_ids=self.bridge.stop_ids,
-                    always_include_final_anchor=config.tutoring.always_include_final_anchor,
-                    include_eos_anchor=config.tutoring.include_eos_anchor,
-                    anchor_window_tokens=config.tutoring.anchor_window_tokens,
-                    max_anchors_per_sequence=config.tutoring.max_anchors_per_sequence,
-                ))
+                len(
+                    select_anchor_positions(
+                        completion,
+                        config.tutoring.interval_tokens,
+                        stop_ids=self.bridge.stop_ids,
+                        always_include_final_anchor=config.tutoring.always_include_final_anchor,
+                        include_eos_anchor=config.tutoring.include_eos_anchor,
+                        anchor_window_tokens=config.tutoring.anchor_window_tokens,
+                        max_anchors_per_sequence=config.tutoring.max_anchors_per_sequence,
+                    )
+                )
                 for _, completion in rollouts
             )
             if config.train.loss_fn == "sparse_anchor_rkl"
@@ -690,10 +682,9 @@ class OPDTrainer:
                 weighted[key] += stats.get(key, 0.0) * count / anchors
             teacher_scored_tokens += int(stats.get("teacher_scored_tokens", 0))
 
-        source_stats = self.source.batch_stats([
-            (item["meta"], self.s_tok.decode(completion))
-            for item, completion in rollouts
-        ])
+        source_stats = self.source.batch_stats(
+            [(item["meta"], self.s_tok.decode(completion)) for item, completion in rollouts]
+        )
         return {
             **weighted,
             **source_stats,
@@ -701,14 +692,11 @@ class OPDTrainer:
             "teacher_anchor_positions": anchors,
             "teacher_scored_tokens": teacher_scored_tokens,
             "rollout_count": len(rollouts),
-            "teacher_requests": (
-                getattr(self.teacher_backend, "request_count", 0)
-                - teacher_requests_before
-            ),
+            "teacher_requests": (getattr(self.teacher_backend, "request_count", 0) - teacher_requests_before),
             "teacher_wall_clock_ms": (
-                getattr(self.teacher_backend, "total_latency_seconds", 0.0)
-                - teacher_latency_before
-            ) * 1000,
+                getattr(self.teacher_backend, "total_latency_seconds", 0.0) - teacher_latency_before
+            )
+            * 1000,
             "rollout_generation_ms": rollout_generation_ms,
             "rollout_student_topk_ms": rollout_student_topk_ms,
             "scoring_and_forward_ms": (time.perf_counter() - scoring_started) * 1000,
@@ -767,45 +755,38 @@ class OPDTrainer:
                 "teacher_student_agreement",
             }
             metrics = {
-                key: sum(
-                    item[key] * item["teacher_anchor_positions"]
-                    for item in microsteps
-                ) / total_anchors
+                key: sum(item[key] * item["teacher_anchor_positions"] for item in microsteps) / total_anchors
                 for key in mean_keys
             }
             if metrics["residual_mass"] > 0.20:
-                raise RuntimeError(
-                    f"student residual-mass kill switch tripped: {metrics['residual_mass']:.4f}"
-                )
+                raise RuntimeError(f"student residual-mass kill switch tripped: {metrics['residual_mass']:.4f}")
             for key in set().union(*(item.keys() for item in microsteps)) - mean_keys:
                 if key.startswith("format_"):
                     metrics[key] = sum(item[key] for item in microsteps) / len(microsteps)
-            metrics.update({
-                "completion_len": total_tokens / total_rollouts,
-                "gradient_norm": grad_norm_value,
-                "gradient_accumulation_steps": grad_accum,
-                "student_generated_tokens": total_tokens,
-                "teacher_anchor_positions": total_anchors,
-                "teacher_scored_tokens": sum(item["teacher_scored_tokens"] for item in microsteps),
-                "teacher_requests": sum(item["teacher_requests"] for item in microsteps),
-                "teacher_wall_clock_ms": sum(item["teacher_wall_clock_ms"] for item in microsteps),
-                "rollout/generation_ms": sum(item["rollout_generation_ms"] for item in microsteps),
-                "rollout/student_topk_ms": sum(item["rollout_student_topk_ms"] for item in microsteps),
-                "student/scoring_and_forward_ms": sum(
-                    item["scoring_and_forward_ms"] for item in microsteps
-                ),
-                "student/backward_ms": sum(item["backward_ms"] for item in microsteps),
-                "rollout/policy_version": self.policy_version,
-                "rollout/staleness": 0,
-                "rollout/sync_ms": self.last_sync_metrics["sync_ms"],
-                "step/wall_clock_ms": (time.perf_counter() - step_started) * 1000,
-                "run/wall_clock_seconds": time.time() - run_started,
-                "lr": self.opt.param_groups[0]["lr"],
-            })
+            metrics.update(
+                {
+                    "completion_len": total_tokens / total_rollouts,
+                    "gradient_norm": grad_norm_value,
+                    "gradient_accumulation_steps": grad_accum,
+                    "student_generated_tokens": total_tokens,
+                    "teacher_anchor_positions": total_anchors,
+                    "teacher_scored_tokens": sum(item["teacher_scored_tokens"] for item in microsteps),
+                    "teacher_requests": sum(item["teacher_requests"] for item in microsteps),
+                    "teacher_wall_clock_ms": sum(item["teacher_wall_clock_ms"] for item in microsteps),
+                    "rollout/generation_ms": sum(item["rollout_generation_ms"] for item in microsteps),
+                    "rollout/student_topk_ms": sum(item["rollout_student_topk_ms"] for item in microsteps),
+                    "student/scoring_and_forward_ms": sum(item["scoring_and_forward_ms"] for item in microsteps),
+                    "student/backward_ms": sum(item["backward_ms"] for item in microsteps),
+                    "rollout/policy_version": self.policy_version,
+                    "rollout/staleness": 0,
+                    "rollout/sync_ms": self.last_sync_metrics["sync_ms"],
+                    "step/wall_clock_ms": (time.perf_counter() - step_started) * 1000,
+                    "run/wall_clock_seconds": time.time() - run_started,
+                    "lr": self.opt.param_groups[0]["lr"],
+                }
+            )
             if str(self.device).startswith("cuda"):
-                metrics["student/peak_vram_mib"] = (
-                    torch.cuda.max_memory_allocated(self.device) / 1024**2
-                )
+                metrics["student/peak_vram_mib"] = torch.cuda.max_memory_allocated(self.device) / 1024**2
             if config.model.rollout_device and str(config.model.rollout_device).startswith("cuda"):
                 metrics["rollout/peak_vram_mib"] = (
                     torch.cuda.max_memory_allocated(config.model.rollout_device) / 1024**2
@@ -813,8 +794,7 @@ class OPDTrainer:
 
             if step % config.logging.log_every == 0:
                 logger.info(
-                    "step %d | kl/anchor=%.4f anchors=%d tokens=%d grad_norm=%.4f "
-                    "len=%.1f lr=%.2e (%.0fs)",
+                    "step %d | kl/anchor=%.4f anchors=%d tokens=%d grad_norm=%.4f len=%.1f lr=%.2e (%.0fs)",
                     step,
                     metrics["kl"],
                     total_anchors,

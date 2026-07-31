@@ -1,0 +1,82 @@
+model:
+  student: /opt/sparse-opd/models/Qwen3-4B
+  teacher: /opt/sparse-opd/models/Qwen3-Coder-Next-FP8
+  teacher_backend: sglang
+  teacher_endpoint: http://127.0.0.1:30000
+  train_device: cuda:2
+  rollout_device: cuda:3
+  gradient_checkpointing: true
+bridge:
+  eos_map: {}
+  extra_stop_tokens: []
+  probe_texts: []
+adapter:
+  type: lora
+  rank: 32
+  alpha: 64
+  dropout: 0.0
+  bias: none
+  target_modules:
+  - q_proj
+  - k_proj
+  - v_proj
+  - o_proj
+  - gate_proj
+  - up_proj
+  - down_proj
+data:
+  format: messages
+  prompts_path: /opt/sparse-opd/data/splits/pilot_train.jsonl
+  dev_prompts_path: /opt/sparse-opd/data/splits/pilot_dev.jsonl
+  dev_size: 32
+  p_reference_shots: 0.0
+  p_pool_shots: 0.0
+sampling:
+  batch_prompts: 4
+  group_size: 1
+  temperature: 1.0
+  top_p: 1.0
+  top_k: -1
+  max_new_tokens: 384
+  cot_fraction: 0.0
+  cot_max_new_tokens: 384
+  gen_micro_seqs: 4
+tutoring:
+  mode: sparse_anchor_rkl
+  interval_tokens: 32
+  anchor_window_tokens: 1
+  always_include_final_anchor: true
+  include_eos_anchor: true
+  teacher_top_k: 64
+  student_top_k: 64
+  residual_bucket: true
+  max_anchors_per_sequence: 64
+  anchor_microbatch: 32
+  epsilon: 1.0e-08
+  teacher_timeout_seconds: 30.0
+  teacher_max_retries: 2
+train:
+  output_dir: /opt/sparse-opd/runs/pilot/offline_sft
+  steps: 300
+  learning_rate: 0.0001
+  warmup_steps: 15
+  lr_scheduler: cosine
+  max_grad_norm: 1.0
+  loss_fn: offline_sft
+  weight_decay: 0.01
+  gradient_accumulation_steps: 4
+  bf16: true
+  seed: 0
+  score_micro_seqs: 4
+  eval_every: 50
+  eval_dev_samples: 32
+  save_steps: 50
+  keep_checkpoints: 3
+logging:
+  log_every: 1
+  use_wandb: false
+  project: sparse-opd
+  run_name: offline_sft_seed0
+experiment:
+  condition: offline_teacher_sft
+  comparison_mode: student_budget

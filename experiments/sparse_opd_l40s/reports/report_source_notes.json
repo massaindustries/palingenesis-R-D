@@ -1,0 +1,23 @@
+{
+  "audience": "technical",
+  "delivery_mode": "html",
+  "required_structure": [
+    "title",
+    "technical summary",
+    "key findings with visual evidence",
+    "scope, data, and metric definitions",
+    "methodology",
+    "limitations, uncertainty, and robustness checks",
+    "recommended next steps",
+    "further questions"
+  ],
+  "selected_runs": [
+    "runs/pilot/20260730T152905Z_base_student_seed0_7d6f8ac",
+    "runs/pilot/20260730T231139Z_offline_sft_seed0_7d6f8ac",
+    "runs/smoke/20260730T144202Z_smoke_suite_seed0_fccdb9a/interval_1",
+    "runs/pilot/20260730T161416Z_interval_32_seed0_7d6f8ac",
+    "runs/smoke/20260730T144202Z_smoke_suite_seed0_fccdb9a/interval_128",
+    "runs/smoke/20260730T144202Z_smoke_suite_seed0_fccdb9a/final_only"
+  ],
+  "omissions": []
+}

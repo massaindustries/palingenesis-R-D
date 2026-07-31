@@ -1,0 +1,4223 @@
+{
+  "surface": "report",
+  "manifest": {
+    "version": 1,
+    "surface": "report",
+    "title": "Sparse On-Policy Distillation on 4\u00d7L40S",
+    "description": "Technical quality/cost report for sparse tutoring interval experiments.",
+    "generatedAt": "2026-07-31T00:06:58.927029+00:00",
+    "cards": [
+      {
+        "id": "best_quality",
+        "description": "Highest observed one-sample sandbox pass rate among evaluated conditions.",
+        "dataset": "headline",
+        "sourceId": "training_results",
+        "metrics": [
+          {
+            "label": "Best pass@1",
+            "field": "best_pass_at_1",
+            "format": "percent"
+          }
+        ]
+      },
+      {
+        "id": "evaluated_count",
+        "description": "Conditions with complete sandbox evaluation artifacts.",
+        "dataset": "headline",
+        "sourceId": "training_results",
+        "metrics": [
+          {
+            "label": "Evaluated conditions",
+            "field": "evaluated_conditions",
+            "format": "number"
+          }
+        ]
+      },
+      {
+        "id": "teacher_stability",
+        "description": "Deterministic teacher requests returning valid stable log-probabilities.",
+        "dataset": "headline",
+        "sourceId": "teacher_benchmark",
+        "metrics": [
+          {
+            "label": "Teacher stability",
+            "field": "teacher_stability_rate",
+            "format": "percent"
+          }
+        ]
+      }
+    ],
+    "charts": [
+      {
+        "id": "quality_interval",
+        "title": "Prompt-v2 smoke pass@1 by tutoring condition",
+        "subtitle": "Same 32 corrected MBPP tasks; Wilson intervals are reported in the exact table",
+        "showDescription": true,
+        "intent": "comparison",
+        "type": "horizontalBar",
+        "dataset": "smoke_quality",
+        "sourceId": "training_results",
+        "encodings": {
+          "x": {
+            "field": "condition_label",
+            "type": "nominal",
+            "label": "Condition"
+          },
+          "y": {
+            "field": "pass_at_1",
+            "type": "quantitative",
+            "label": "Pass@1",
+            "format": "percent"
+          },
+          "tooltip": [
+            {
+              "field": "test_pass_rate",
+              "type": "quantitative",
+              "label": "Individual test pass rate",
+              "format": "percent"
+            },
+            {
+              "field": "optimizer_steps",
+              "type": "quantitative",
+              "label": "Optimizer steps"
+            }
+          ]
+        },
+        "valueFormat": "percent",
+        "layout": "full",
+        "palette": {
+          "kind": "sequential",
+          "name": "blue"
+        },
+        "surface": {
+          "surface": "export",
+          "viewMode": "both"
+        }
+      },
+      {
+        "id": "quality_teacher_hours",
+        "title": "Pass@1 versus measured teacher GPU-hours",
+        "subtitle": "Each point is one completed condition/seed; lower-right is preferred",
+        "showDescription": true,
+        "intent": "relationship",
+        "type": "scatter",
+        "dataset": "quality",
+        "sourceId": "training_results",
+        "encodings": {
+          "x": {
+            "field": "teacher_gpu_hours",
+            "type": "quantitative",
+            "label": "Teacher GPU-hours"
+          },
+          "y": {
+            "field": "pass_at_1",
+            "type": "quantitative",
+            "label": "Pass@1",
+            "format": "percent"
+          },
+          "tooltip": [
+            {
+              "field": "condition_label",
+              "type": "nominal",
+              "label": "Condition"
+            },
+            {
+              "field": "teacher_anchor_positions",
+              "type": "quantitative",
+              "label": "Anchor positions"
+            }
+          ]
+        },
+        "valueFormat": "percent",
+        "layout": "full",
+        "palette": {
+          "kind": "sequential",
+          "name": "blue"
+        },
+        "surface": {
+          "surface": "export",
+          "viewMode": "both"
+        }
+      },
+      {
+        "id": "quality_anchors",
+        "title": "Pass@1 versus teacher anchor positions",
+        "subtitle": "Anchor count is the primary teacher-compute exposure controlled by the interval",
+        "showDescription": true,
+        "intent": "relationship",
+        "type": "scatter",
+        "dataset": "quality",
+        "sourceId": "training_results",
+        "encodings": {
+          "x": {
+            "field": "teacher_anchor_positions",
+            "type": "quantitative",
+            "label": "Anchor positions"
+          },
+          "y": {
+            "field": "pass_at_1",
+            "type": "quantitative",
+            "label": "Pass@1",
+            "format": "percent"
+          },
+          "tooltip": [
+            {
+              "field": "condition_label",
+              "type": "nominal",
+              "label": "Condition"
+            },
+            {
+              "field": "teacher_gpu_hours",
+              "type": "quantitative",
+              "label": "Teacher GPU-hours"
+            }
+          ]
+        },
+        "valueFormat": "percent",
+        "layout": "full",
+        "palette": {
+          "kind": "sequential",
+          "name": "blue"
+        },
+        "surface": {
+          "surface": "export",
+          "viewMode": "both"
+        }
+      },
+      {
+        "id": "wall_breakdown",
+        "title": "Measured wall-clock breakdown",
+        "subtitle": "Cumulative seconds across logged optimizer steps; remainder includes student forward and orchestration",
+        "showDescription": true,
+        "intent": "comparison",
+        "type": "stackedBar",
+        "dataset": "wall_breakdown",
+        "sourceId": "training_metrics",
+        "encodings": {
+          "x": {
+            "field": "condition",
+            "type": "nominal",
+            "label": "Condition"
+          },
+          "y": {
+            "field": "seconds",
+            "type": "quantitative",
+            "label": "Seconds"
+          },
+          "color": {
+            "field": "phase",
+            "type": "nominal",
+            "label": "Phase"
+          },
+          "tooltip": [
+            {
+              "field": "run_seconds",
+              "type": "quantitative",
+              "label": "Total logged step seconds"
+            }
+          ]
+        },
+        "valueFormat": "number",
+        "layout": "full",
+        "palette": {
+          "kind": "categorical",
+          "name": "blue"
+        },
+        "surface": {
+          "surface": "export",
+          "viewMode": "both"
+        }
+      },
+      {
+        "id": "residual_step",
+        "title": "Student residual probability mass by step",
+        "subtitle": "Mean mass outside teacher/student top-K union; kill switch is 0.20",
+        "showDescription": true,
+        "intent": "trend",
+        "type": "line",
+        "dataset": "training_curves",
+        "sourceId": "training_metrics",
+        "encodings": {
+          "x": {
+            "field": "step",
+            "type": "quantitative",
+            "label": "Optimizer step"
+          },
+          "y": {
+            "field": "residual_student_mass",
+            "type": "quantitative",
+            "label": "Residual mass"
+          },
+          "color": {
+            "field": "condition",
+            "type": "nominal",
+            "label": "Condition"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "full",
+        "palette": {
+          "kind": "categorical",
+          "name": "blue"
+        },
+        "surface": {
+          "surface": "export",
+          "viewMode": "both"
+        }
+      },
+      {
+        "id": "kl_step",
+        "title": "Sparse anchor reverse-KL by step",
+        "subtitle": "Per-anchor coarse KL on the explicit support plus one residual bucket",
+        "showDescription": true,
+        "intent": "trend",
+        "type": "line",
+        "dataset": "training_curves",
+        "sourceId": "training_metrics",
+        "encodings": {
+          "x": {
+            "field": "step",
+            "type": "quantitative",
+            "label": "Optimizer step"
+          },
+          "y": {
+            "field": "kl",
+            "type": "quantitative",
+            "label": "KL (nats)"
+          },
+          "color": {
+            "field": "condition",
+            "type": "nominal",
+            "label": "Condition"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "full",
+        "palette": {
+          "kind": "categorical",
+          "name": "blue"
+        },
+        "surface": {
+          "surface": "export",
+          "viewMode": "both"
+        }
+      },
+      {
+        "id": "completion_step",
+        "title": "Completion length by step",
+        "subtitle": "Mean generated student tokens per rollout; truncation ceiling follows the run config",
+        "showDescription": true,
+        "intent": "trend",
+        "type": "line",
+        "dataset": "training_curves",
+        "sourceId": "training_metrics",
+        "encodings": {
+          "x": {
+            "field": "step",
+            "type": "quantitative",
+            "label": "Optimizer step"
+          },
+          "y": {
+            "field": "completion_length_tokens",
+            "type": "quantitative",
+            "label": "Tokens"
+          },
+          "color": {
+            "field": "condition",
+            "type": "nominal",
+            "label": "Condition"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "full",
+        "palette": {
+          "kind": "categorical",
+          "name": "blue"
+        },
+        "surface": {
+          "surface": "export",
+          "viewMode": "both"
+        }
+      }
+    ],
+    "tables": [
+      {
+        "id": "condition_table",
+        "title": "Condition-level quality and cost",
+        "subtitle": "Exact values for completed training and sandbox evaluation runs",
+        "dataset": "quality",
+        "sourceId": "training_results",
+        "defaultSort": {
+          "field": "pass_at_1",
+          "direction": "desc"
+        },
+        "density": "spacious",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "condition_label",
+            "label": "Condition",
+            "type": "text"
+          },
+          {
+            "field": "pass_at_1",
+            "label": "Pass@1",
+            "format": "percent"
+          },
+          {
+            "field": "test_pass_rate",
+            "label": "Test pass rate",
+            "format": "percent"
+          },
+          {
+            "field": "teacher_gpu_hours",
+            "label": "Teacher GPU-hours",
+            "format": "number"
+          },
+          {
+            "field": "teacher_anchor_positions",
+            "label": "Anchor positions",
+            "format": "compact"
+          },
+          {
+            "field": "optimizer_steps",
+            "label": "Steps",
+            "format": "number"
+          }
+        ]
+      },
+      {
+        "id": "smoke_condition_table",
+        "title": "Prompt-v2 smoke quality by interval",
+        "subtitle": "Same 32 held-out tasks for every row; wide uncertainty at this denominator",
+        "dataset": "smoke_quality",
+        "sourceId": "training_results",
+        "defaultSort": {
+          "field": "teacher_anchor_positions",
+          "direction": "desc"
+        },
+        "density": "spacious",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "condition_label",
+            "label": "Condition",
+            "type": "text"
+          },
+          {
+            "field": "pass_at_1",
+            "label": "Pass@1",
+            "format": "percent"
+          },
+          {
+            "field": "pass_at_1_ci95_low",
+            "label": "CI low",
+            "format": "percent"
+          },
+          {
+            "field": "pass_at_1_ci95_high",
+            "label": "CI high",
+            "format": "percent"
+          },
+          {
+            "field": "test_pass_rate",
+            "label": "Test pass",
+            "format": "percent"
+          },
+          {
+            "field": "teacher_anchor_positions",
+            "label": "Anchors",
+            "format": "compact"
+          }
+        ]
+      }
+    ],
+    "sources": [
+      {
+        "id": "training_results",
+        "label": "Collected Sparse OPD run artifacts",
+        "path": "results/summary.json"
+      },
+      {
+        "id": "training_metrics",
+        "label": "Per-step Sparse OPD metrics",
+        "path": "runs"
+      },
+      {
+        "id": "teacher_benchmark",
+        "label": "SGLang teacher benchmark",
+        "path": "reports/teacher_benchmark.json"
+      }
+    ],
+    "blocks": [
+      {
+        "id": "title",
+        "type": "markdown",
+        "body": "# Sparse On-Policy Distillation on 4\u00d7L40S"
+      },
+      {
+        "id": "technical_summary",
+        "type": "markdown",
+        "body": "## Technical summary\n\n**Interval 32 currently has the highest observed pass@1 (61.1%).** This is a descriptive result at the completed run/seed scope; it is not yet evidence of statistical superiority.\n\nThe teacher served its native FP8 checkpoint on GPUs 0\u20131; the LoRA trainer and a strict-version rollout replica ran on GPUs 2 and 3. All quality claims below use isolated execution of generated code."
+      },
+      {
+        "id": "headline_metrics",
+        "type": "metric-strip",
+        "cardIds": [
+          "best_quality",
+          "evaluated_count",
+          "teacher_stability"
+        ]
+      },
+      {
+        "id": "quality_finding",
+        "type": "markdown",
+        "body": "## Quality varies with tutoring frequency\n\nThe first chart compares the primary outcome on the same 32 prompt-v2 smoke tasks. Read it with the Wilson intervals in the exact table: this denominator can rule out a severe collapse, but not establish small differences. KL is a training diagnostic, not the decision metric."
+      },
+      {
+        "id": "quality_interval_block",
+        "type": "chart",
+        "chartId": "quality_interval"
+      },
+      {
+        "id": "smoke_condition_table_block",
+        "type": "table",
+        "tableId": "smoke_condition_table"
+      },
+      {
+        "id": "condition_table_block",
+        "type": "table",
+        "tableId": "condition_table"
+      },
+      {
+        "id": "efficiency_finding",
+        "type": "markdown",
+        "body": "## Teacher cost determines the useful frontier\n\nThese relationship views separate raw quality from measured teacher service time and from the number of scored positions. With a single seed, points are descriptive and should not be read as a smooth scaling law."
+      },
+      {
+        "id": "quality_teacher_hours_block",
+        "type": "chart",
+        "chartId": "quality_teacher_hours"
+      },
+      {
+        "id": "quality_anchors_block",
+        "type": "chart",
+        "chartId": "quality_anchors"
+      },
+      {
+        "id": "timing_finding",
+        "type": "markdown",
+        "body": "## End-to-end time includes more than teacher scoring\n\nRollout, top-K extraction, teacher requests, backward, adapter synchronization, and unallocated forward/orchestration time are shown separately. Phase timers are additive only after assigning overlap to the remainder."
+      },
+      {
+        "id": "wall_breakdown_block",
+        "type": "chart",
+        "chartId": "wall_breakdown"
+      },
+      {
+        "id": "training_diagnostics",
+        "type": "markdown",
+        "body": "## Training diagnostics remain bounded but noisy\n\nResidual mass must remain below 0.20 and policy staleness must remain zero. Per-step KL is expected to be noisy because completions are sampled on-policy; completion length reveals truncation or behavioral shifts that can confound cost."
+      },
+      {
+        "id": "residual_step_block",
+        "type": "chart",
+        "chartId": "residual_step"
+      },
+      {
+        "id": "kl_step_block",
+        "type": "chart",
+        "chartId": "kl_step"
+      },
+      {
+        "id": "completion_step_block",
+        "type": "chart",
+        "chartId": "completion_step"
+      },
+      {
+        "id": "scope_definitions",
+        "type": "markdown",
+        "body": "## Scope, data, and metric definitions\n\n- **Task grain:** one sanitized MBPP problem; prompt-v2 exposes the exact callable signature but no tests or implementation.\n- **Final denominator:** 257 official test tasks; smoke interval comparison uses a labeled 32-task subset.\n- **Pass@1:** one greedy completion passes every task test in the locked-down sandbox.\n- **Sparse anchor RKL:** reverse KL on teacher top-K \u222a student top-K \u222a stop IDs, plus one residual category.\n- **Teacher GPU-hours:** measured request wall-clock multiplied by two tensor-parallel teacher GPUs.\n- **Comparison:** same model revisions, prompt template, split, seed, LoRA target modules, and evaluation set."
+      },
+      {
+        "id": "methodology",
+        "type": "markdown",
+        "body": "## Experimental design and implementation\n\nQwen3-Coder-Next-FP8 is served by SGLang TP=2 with BF16 KV cache. Qwen3-4B uses BF16 LoRA (r=32, \u03b1=64). Four independent rollout micro-batches are accumulated under one policy version, followed by one optimizer step and a hash-verified CPU-staged adapter sync. The official train/dev/test splits preserve MBPP sanitized partitions, reject prompt/reference-hash overlap, and validate that no held-out assertion appears in a prompt."
+      },
+      {
+        "id": "limitations",
+        "type": "markdown",
+        "body": "## Limitations, uncertainty, and robustness\n\n- Initial comparisons use one seed; pass@1 tables report Wilson 95% intervals and final checkpoint comparisons use paired bootstrap/McNemar tests.\n- The 32-task smoke interval estimates have wide intervals and are not mixed with the 257-task pilot denominator.\n- Coarse sparse KL is not numerically identical to the original full-vocabulary KL.\n- Teacher request wall-clock is measured client-side and includes queueing/retry overhead.\n- NVML on this host does not expose total energy consumption, so no defensible energy estimate is reported.\n- CPU-staged adapter transport is topology-specific; sync time should not generalize to NVLink systems.\n- A quality recommendation is provisional until base, offline SFT, and the selected 300-step pilot are evaluated."
+      },
+      {
+        "id": "next_steps",
+        "type": "markdown",
+        "body": "## Recommended next steps\n\n1. Repeat the best sparse point, dense interval-1, and offline SFT with seeds 0, 1, and 2.\n2. Run top-K 64 versus 128 and anchor-window 1 versus 4 only on the best sparse interval.\n3. Report confidence intervals and retain the same sandbox denominator before claiming superiority."
+      },
+      {
+        "id": "questions",
+        "type": "markdown",
+        "body": "## Further questions\n\n- Does the apparent optimum persist under teacher-compute-matched rather than student-step-matched budgets?\n- How much of any quality change is mediated by longer completions rather than anchor placement?\n- Would a process-separated NCCL sync path materially reduce end-to-end time without staleness?"
+      }
+    ]
+  },
+  "snapshot": {
+    "version": 1,
+    "generatedAt": "2026-07-31T00:06:58.927029+00:00",
+    "status": "ready",
+    "datasets": {
+      "headline": [
+        {
+          "best_pass_at_1": 0.6108949416342413,
+          "best_condition": "Interval 32",
+          "evaluated_conditions": 3,
+          "teacher_stability_rate": 1.0,
+          "teacher_matrix_cases": 60
+        }
+      ],
+      "quality": [
+        {
+          "condition": "base_student",
+          "condition_label": "Base student",
+          "interval_tokens": "32",
+          "pass_at_1": 0.603112840466926,
+          "pass_at_1_ci95_low": 0.5422013707033255,
+          "pass_at_1_ci95_high": 0.6609871877398814,
+          "test_pass_rate": 0.6649484536082474,
+          "syntax_success_rate": 1.0,
+          "runtime_success_rate": 0.9961089494163424,
+          "teacher_gpu_hours": 0.0,
+          "teacher_anchor_positions": 0,
+          "optimizer_steps": 0,
+          "student_tokens": 0,
+          "run_wall_clock_seconds": 0.0,
+          "evaluation_tasks": 257,
+          "normalized_ast_uniqueness": 0.9961089494163424,
+          "exact_duplicate_rate": 0.0038910505836575737
+        },
+        {
+          "condition": "offline_teacher_sft",
+          "condition_label": "Offline teacher SFT",
+          "interval_tokens": "32",
+          "pass_at_1": 0.6070038910505836,
+          "pass_at_1_ci95_low": 0.5461350721041693,
+          "pass_at_1_ci95_high": 0.6647209791104793,
+          "test_pass_rate": 0.6585051546391752,
+          "syntax_success_rate": 0.980544747081712,
+          "runtime_success_rate": 0.980544747081712,
+          "teacher_gpu_hours": 0.0,
+          "teacher_anchor_positions": 0,
+          "optimizer_steps": 300,
+          "student_tokens": 474360,
+          "run_wall_clock_seconds": 1514.3461478579993,
+          "evaluation_tasks": 257,
+          "normalized_ast_uniqueness": 0.996031746031746,
+          "exact_duplicate_rate": 0.0
+        },
+        {
+          "condition": "sparse_anchor_rkl_k64_interval32",
+          "condition_label": "Interval 32",
+          "interval_tokens": "32",
+          "pass_at_1": 0.6108949416342413,
+          "pass_at_1_ci95_low": 0.5500726538337872,
+          "pass_at_1_ci95_high": 0.6684508901523034,
+          "test_pass_rate": 0.6481958762886598,
+          "syntax_success_rate": 0.933852140077821,
+          "runtime_success_rate": 0.9299610894941635,
+          "teacher_gpu_hours": 0.5874377896544319,
+          "teacher_anchor_positions": 24123,
+          "optimizer_steps": 300,
+          "student_tokens": 703332,
+          "run_wall_clock_seconds": 23291.349724292755,
+          "evaluation_tasks": 257,
+          "normalized_ast_uniqueness": 1.0,
+          "exact_duplicate_rate": 0.0
+        }
+      ],
+      "smoke_quality": [
+        {
+          "condition": "base_student",
+          "condition_label": "Base student",
+          "interval_tokens": "32",
+          "pass_at_1": 0.6875,
+          "pass_at_1_ci95_low": 0.5143332169904459,
+          "pass_at_1_ci95_high": 0.8204745836639026,
+          "test_pass_rate": 0.711340206185567,
+          "teacher_gpu_hours": 0.0,
+          "teacher_anchor_positions": 0,
+          "optimizer_steps": 0,
+          "mean_solution_length_chars": 149.5625,
+          "evaluation_tasks": 32
+        },
+        {
+          "condition": "dense_anchor_rkl_k64_interval1",
+          "condition_label": "Interval 1",
+          "interval_tokens": "1",
+          "pass_at_1": 0.6875,
+          "pass_at_1_ci95_low": 0.5143332169904459,
+          "pass_at_1_ci95_high": 0.8204745836639026,
+          "test_pass_rate": 0.6907216494845361,
+          "teacher_gpu_hours": 0.051777993397776195,
+          "teacher_anchor_positions": 4844,
+          "optimizer_steps": 20,
+          "mean_solution_length_chars": 328.28125,
+          "evaluation_tasks": 32
+        },
+        {
+          "condition": "sparse_anchor_rkl_k64_interval32",
+          "condition_label": "Interval 32",
+          "interval_tokens": "32",
+          "pass_at_1": 0.65625,
+          "pass_at_1_ci95_low": 0.4831108797896222,
+          "pass_at_1_ci95_high": 0.7958956207556682,
+          "test_pass_rate": 0.6804123711340206,
+          "teacher_gpu_hours": 0.011000795058331883,
+          "teacher_anchor_positions": 151,
+          "optimizer_steps": 20,
+          "mean_solution_length_chars": 217.59375,
+          "evaluation_tasks": 32
+        },
+        {
+          "condition": "sparse_anchor_rkl_k64_interval128",
+          "condition_label": "Interval 128",
+          "interval_tokens": "128",
+          "pass_at_1": 0.65625,
+          "pass_at_1_ci95_low": 0.4831108797896222,
+          "pass_at_1_ci95_high": 0.7958956207556682,
+          "test_pass_rate": 0.6804123711340206,
+          "teacher_gpu_hours": 0.014764608470556292,
+          "teacher_anchor_positions": 80,
+          "optimizer_steps": 20,
+          "mean_solution_length_chars": 236.1875,
+          "evaluation_tasks": 32
+        },
+        {
+          "condition": "final_only_rkl",
+          "condition_label": "Final only",
+          "interval_tokens": "final",
+          "pass_at_1": 0.625,
+          "pass_at_1_ci95_low": 0.4525440735307745,
+          "pass_at_1_ci95_high": 0.7706611269054578,
+          "test_pass_rate": 0.6391752577319587,
+          "teacher_gpu_hours": 0.01225404893277654,
+          "teacher_anchor_positions": 80,
+          "optimizer_steps": 20,
+          "mean_solution_length_chars": 161.15625,
+          "evaluation_tasks": 32
+        }
+      ],
+      "wall_breakdown": [
+        {
+          "condition": "Base student",
+          "phase": "Student rollout",
+          "seconds": 0.0,
+          "run_seconds": 0.0
+        },
+        {
+          "condition": "Base student",
+          "phase": "Student top-K",
+          "seconds": 0.0,
+          "run_seconds": 0.0
+        },
+        {
+          "condition": "Base student",
+          "phase": "Teacher scoring",
+          "seconds": 0.0,
+          "run_seconds": 0.0
+        },
+        {
+          "condition": "Base student",
+          "phase": "Backward",
+          "seconds": 0.0,
+          "run_seconds": 0.0
+        },
+        {
+          "condition": "Base student",
+          "phase": "Adapter sync",
+          "seconds": 0.0,
+          "run_seconds": 0.0
+        },
+        {
+          "condition": "Base student",
+          "phase": "Other/forward overhead",
+          "seconds": 0.0,
+          "run_seconds": 0.0
+        },
+        {
+          "condition": "Offline teacher SFT",
+          "phase": "Student rollout",
+          "seconds": 0.0,
+          "run_seconds": 1508.933914991982
+        },
+        {
+          "condition": "Offline teacher SFT",
+          "phase": "Student top-K",
+          "seconds": 0.0,
+          "run_seconds": 1508.933914991982
+        },
+        {
+          "condition": "Offline teacher SFT",
+          "phase": "Teacher scoring",
+          "seconds": 0.0,
+          "run_seconds": 1508.933914991982
+        },
+        {
+          "condition": "Offline teacher SFT",
+          "phase": "Backward",
+          "seconds": 0.0,
+          "run_seconds": 1508.933914991982
+        },
+        {
+          "condition": "Offline teacher SFT",
+          "phase": "Adapter sync",
+          "seconds": 0.0,
+          "run_seconds": 1508.933914991982
+        },
+        {
+          "condition": "Offline teacher SFT",
+          "phase": "Other/forward overhead",
+          "seconds": 1508.933914991982,
+          "run_seconds": 1508.933914991982
+        },
+        {
+          "condition": "Interval 1",
+          "phase": "Student rollout",
+          "seconds": 321.35479147699607,
+          "run_seconds": 463.87324103899573
+        },
+        {
+          "condition": "Interval 1",
+          "phase": "Student top-K",
+          "seconds": 6.474679056004788,
+          "run_seconds": 463.87324103899573
+        },
+        {
+          "condition": "Interval 1",
+          "phase": "Teacher scoring",
+          "seconds": 93.20038811599714,
+          "run_seconds": 463.87324103899573
+        },
+        {
+          "condition": "Interval 1",
+          "phase": "Backward",
+          "seconds": 17.03342476800117,
+          "run_seconds": 463.87324103899573
+        },
+        {
+          "condition": "Interval 1",
+          "phase": "Adapter sync",
+          "seconds": 10.13917528300226,
+          "run_seconds": 463.87324103899573
+        },
+        {
+          "condition": "Interval 1",
+          "phase": "Other/forward overhead",
+          "seconds": 15.670782338994286,
+          "run_seconds": 463.87324103899573
+        },
+        {
+          "condition": "Interval 32",
+          "phase": "Student rollout",
+          "seconds": 20862.22585263596,
+          "run_seconds": 23111.016434361998
+        },
+        {
+          "condition": "Interval 32",
+          "phase": "Student top-K",
+          "seconds": 347.9860831229707,
+          "run_seconds": 23111.016434361998
+        },
+        {
+          "condition": "Interval 32",
+          "phase": "Teacher scoring",
+          "seconds": 1057.3880213779773,
+          "run_seconds": 23111.016434361998
+        },
+        {
+          "condition": "Interval 32",
+          "phase": "Backward",
+          "seconds": 440.5710466480016,
+          "run_seconds": 23111.016434361998
+        },
+        {
+          "condition": "Interval 32",
+          "phase": "Adapter sync",
+          "seconds": 142.54969869199883,
+          "run_seconds": 23111.016434361998
+        },
+        {
+          "condition": "Interval 32",
+          "phase": "Other/forward overhead",
+          "seconds": 260.2957318850931,
+          "run_seconds": 23111.016434361998
+        },
+        {
+          "condition": "Interval 128",
+          "phase": "Student rollout",
+          "seconds": 298.14998822300544,
+          "run_seconds": 363.71957590300013
+        },
+        {
+          "condition": "Interval 128",
+          "phase": "Student top-K",
+          "seconds": 6.041607618005401,
+          "run_seconds": 363.71957590300013
+        },
+        {
+          "condition": "Interval 128",
+          "phase": "Teacher scoring",
+          "seconds": 26.576295247001326,
+          "run_seconds": 363.71957590300013
+        },
+        {
+          "condition": "Interval 128",
+          "phase": "Backward",
+          "seconds": 13.66504230299779,
+          "run_seconds": 363.71957590300013
+        },
+        {
+          "condition": "Interval 128",
+          "phase": "Adapter sync",
+          "seconds": 9.342147569999725,
+          "run_seconds": 363.71957590300013
+        },
+        {
+          "condition": "Interval 128",
+          "phase": "Other/forward overhead",
+          "seconds": 9.944494941990456,
+          "run_seconds": 363.71957590300013
+        },
+        {
+          "condition": "Final only",
+          "phase": "Student rollout",
+          "seconds": 267.177363675999,
+          "run_seconds": 328.1187970319989
+        },
+        {
+          "condition": "Final only",
+          "phase": "Student top-K",
+          "seconds": 5.9347257060007905,
+          "run_seconds": 328.1187970319989
+        },
+        {
+          "condition": "Final only",
+          "phase": "Teacher scoring",
+          "seconds": 22.05728807899777,
+          "run_seconds": 328.1187970319989
+        },
+        {
+          "condition": "Final only",
+          "phase": "Backward",
+          "seconds": 13.389576172996385,
+          "run_seconds": 328.1187970319989
+        },
+        {
+          "condition": "Final only",
+          "phase": "Adapter sync",
+          "seconds": 9.335183569999572,
+          "run_seconds": 328.1187970319989
+        },
+        {
+          "condition": "Final only",
+          "phase": "Other/forward overhead",
+          "seconds": 10.224659828005372,
+          "run_seconds": 328.1187970319989
+        }
+      ],
+      "training_curves": [
+        {
+          "condition": "Interval 1",
+          "step": 0,
+          "kl": 0.6131791415532064,
+          "residual_student_mass": 7.217749953269958e-08,
+          "completion_length_tokens": 64.0,
+          "anchor_positions": 256,
+          "student_tokens": 256
+        },
+        {
+          "condition": "Interval 1",
+          "step": 1,
+          "kl": 0.3720720965324166,
+          "residual_student_mass": 2.9273287079038e-08,
+          "completion_length_tokens": 42.25,
+          "anchor_positions": 169,
+          "student_tokens": 169
+        },
+        {
+          "condition": "Interval 1",
+          "step": 2,
+          "kl": 0.27387037991885715,
+          "residual_student_mass": 5.899016390141753e-08,
+          "completion_length_tokens": 48.5,
+          "anchor_positions": 194,
+          "student_tokens": 194
+        },
+        {
+          "condition": "Interval 1",
+          "step": 3,
+          "kl": 0.5881520877210581,
+          "residual_student_mass": 1.1661778325619905e-07,
+          "completion_length_tokens": 63.25,
+          "anchor_positions": 253,
+          "student_tokens": 253
+        },
+        {
+          "condition": "Interval 1",
+          "step": 4,
+          "kl": 0.48351108271083315,
+          "residual_student_mass": 2.56125398260779e-07,
+          "completion_length_tokens": 59.75,
+          "anchor_positions": 239,
+          "student_tokens": 239
+        },
+        {
+          "condition": "Interval 1",
+          "step": 5,
+          "kl": 0.35463742818012417,
+          "residual_student_mass": 1.6356623449990916e-08,
+          "completion_length_tokens": 53.75,
+          "anchor_positions": 215,
+          "student_tokens": 215
+        },
+        {
+          "condition": "Interval 1",
+          "step": 6,
+          "kl": 0.3732691992834109,
+          "residual_student_mass": 4.6902015560963114e-08,
+          "completion_length_tokens": 61.0,
+          "anchor_positions": 244,
+          "student_tokens": 244
+        },
+        {
+          "condition": "Interval 1",
+          "step": 7,
+          "kl": 0.5072484469327547,
+          "residual_student_mass": 2.2817403078079224e-08,
+          "completion_length_tokens": 64.0,
+          "anchor_positions": 256,
+          "student_tokens": 256
+        },
+        {
+          "condition": "Interval 1",
+          "step": 8,
+          "kl": 0.34888736300889045,
+          "residual_student_mass": 1.6280898341426142e-08,
+          "completion_length_tokens": 54.0,
+          "anchor_positions": 216,
+          "student_tokens": 216
+        },
+        {
+          "condition": "Interval 1",
+          "step": 9,
+          "kl": 0.6075193766641533,
+          "residual_student_mass": 2.5867484509944916e-07,
+          "completion_length_tokens": 64.0,
+          "anchor_positions": 256,
+          "student_tokens": 256
+        },
+        {
+          "condition": "Interval 1",
+          "step": 10,
+          "kl": 0.483382708203281,
+          "residual_student_mass": 2.3515895009040833e-08,
+          "completion_length_tokens": 64.0,
+          "anchor_positions": 256,
+          "student_tokens": 256
+        },
+        {
+          "condition": "Interval 1",
+          "step": 11,
+          "kl": 0.45885363472599083,
+          "residual_student_mass": 7.636845111846924e-08,
+          "completion_length_tokens": 64.0,
+          "anchor_positions": 256,
+          "student_tokens": 256
+        },
+        {
+          "condition": "Interval 1",
+          "step": 12,
+          "kl": 0.43851880075004473,
+          "residual_student_mass": 1.1576108696046939e-08,
+          "completion_length_tokens": 60.5,
+          "anchor_positions": 242,
+          "student_tokens": 242
+        },
+        {
+          "condition": "Interval 1",
+          "step": 13,
+          "kl": 0.4374209109889175,
+          "residual_student_mass": 6.193295121192932e-08,
+          "completion_length_tokens": 64.0,
+          "anchor_positions": 256,
+          "student_tokens": 256
+        },
+        {
+          "condition": "Interval 1",
+          "step": 14,
+          "kl": 0.5329122755146851,
+          "residual_student_mass": 6.28642737865448e-09,
+          "completion_length_tokens": 64.0,
+          "anchor_positions": 256,
+          "student_tokens": 256
+        },
+        {
+          "condition": "Interval 1",
+          "step": 15,
+          "kl": 0.5681496010330179,
+          "residual_student_mass": 2.4260953068733215e-07,
+          "completion_length_tokens": 64.0,
+          "anchor_positions": 256,
+          "student_tokens": 256
+        },
+        {
+          "condition": "Interval 1",
+          "step": 16,
+          "kl": 0.5915494013932949,
+          "residual_student_mass": 1.1641532182693481e-09,
+          "completion_length_tokens": 64.0,
+          "anchor_positions": 256,
+          "student_tokens": 256
+        },
+        {
+          "condition": "Interval 1",
+          "step": 17,
+          "kl": 0.4047141492952766,
+          "residual_student_mass": 5.2619725465774536e-08,
+          "completion_length_tokens": 64.0,
+          "anchor_positions": 256,
+          "student_tokens": 256
+        },
+        {
+          "condition": "Interval 1",
+          "step": 18,
+          "kl": 0.4414240135181565,
+          "residual_student_mass": 2.3888424038887024e-07,
+          "completion_length_tokens": 64.0,
+          "anchor_positions": 256,
+          "student_tokens": 256
+        },
+        {
+          "condition": "Interval 1",
+          "step": 19,
+          "kl": 0.4234023700812914,
+          "residual_student_mass": 5.4016709327697754e-08,
+          "completion_length_tokens": 64.0,
+          "anchor_positions": 256,
+          "student_tokens": 256
+        },
+        {
+          "condition": "Interval 32",
+          "step": 0,
+          "kl": 0.0784358913678504,
+          "residual_student_mass": 2.6226043701171877e-07,
+          "completion_length_tokens": 44.6875,
+          "anchor_positions": 30,
+          "student_tokens": 715
+        },
+        {
+          "condition": "Interval 32",
+          "step": 1,
+          "kl": 0.004340147292837698,
+          "residual_student_mass": 2.1778620206392728e-07,
+          "completion_length_tokens": 33.875,
+          "anchor_positions": 26,
+          "student_tokens": 542
+        },
+        {
+          "condition": "Interval 32",
+          "step": 2,
+          "kl": 0.44822023076111656,
+          "residual_student_mass": 2.51664055718316e-07,
+          "completion_length_tokens": 54.9375,
+          "anchor_positions": 36,
+          "student_tokens": 879
+        },
+        {
+          "condition": "Interval 32",
+          "step": 3,
+          "kl": 0.4805131052314961,
+          "residual_student_mass": 1.536475287543403e-07,
+          "completion_length_tokens": 71.375,
+          "anchor_positions": 45,
+          "student_tokens": 1142
+        },
+        {
+          "condition": "Interval 32",
+          "step": 4,
+          "kl": 0.013455999286086763,
+          "residual_student_mass": 1.993030309677124e-07,
+          "completion_length_tokens": 49.125,
+          "anchor_positions": 32,
+          "student_tokens": 786
+        },
+        {
+          "condition": "Interval 32",
+          "step": 5,
+          "kl": 0.4463977212759217,
+          "residual_student_mass": 1.3854052569415117e-07,
+          "completion_length_tokens": 60.75,
+          "anchor_positions": 37,
+          "student_tokens": 972
+        },
+        {
+          "condition": "Interval 32",
+          "step": 6,
+          "kl": 0.011681449183796388,
+          "residual_student_mass": 2.0662943522135417e-07,
+          "completion_length_tokens": 42.5625,
+          "anchor_positions": 30,
+          "student_tokens": 681
+        },
+        {
+          "condition": "Interval 32",
+          "step": 7,
+          "kl": 0.12823838469030807,
+          "residual_student_mass": 2.3179584079318576e-07,
+          "completion_length_tokens": 53.25,
+          "anchor_positions": 36,
+          "student_tokens": 852
+        },
+        {
+          "condition": "Interval 32",
+          "step": 8,
+          "kl": 0.32914198597053757,
+          "residual_student_mass": 3.4993694674584174e-07,
+          "completion_length_tokens": 47.8125,
+          "anchor_positions": 31,
+          "student_tokens": 765
+        },
+        {
+          "condition": "Interval 32",
+          "step": 9,
+          "kl": 0.22611362794256393,
+          "residual_student_mass": 1.1239733014787946e-07,
+          "completion_length_tokens": 55.8125,
+          "anchor_positions": 35,
+          "student_tokens": 893
+        },
+        {
+          "condition": "Interval 32",
+          "step": 10,
+          "kl": 0.2800812487835745,
+          "residual_student_mass": 1.0509239999871505e-07,
+          "completion_length_tokens": 59.4375,
+          "anchor_positions": 38,
+          "student_tokens": 951
+        },
+        {
+          "condition": "Interval 32",
+          "step": 11,
+          "kl": 0.05322303879905039,
+          "residual_student_mass": 9.304139672256098e-08,
+          "completion_length_tokens": 66.75,
+          "anchor_positions": 41,
+          "student_tokens": 1068
+        },
+        {
+          "condition": "Interval 32",
+          "step": 12,
+          "kl": 0.3867417074798201,
+          "residual_student_mass": 1.5602392308852252e-07,
+          "completion_length_tokens": 51.5,
+          "anchor_positions": 34,
+          "student_tokens": 824
+        },
+        {
+          "condition": "Interval 32",
+          "step": 13,
+          "kl": 0.26177070712992406,
+          "residual_student_mass": 2.1429288954961868e-07,
+          "completion_length_tokens": 65.6875,
+          "anchor_positions": 42,
+          "student_tokens": 1051
+        },
+        {
+          "condition": "Interval 32",
+          "step": 14,
+          "kl": 0.28418766852427246,
+          "residual_student_mass": 8.500990320424565e-08,
+          "completion_length_tokens": 105.3125,
+          "anchor_positions": 61,
+          "student_tokens": 1685
+        },
+        {
+          "condition": "Interval 32",
+          "step": 15,
+          "kl": 0.09601185364696176,
+          "residual_student_mass": 2.450413174099392e-07,
+          "completion_length_tokens": 56.0625,
+          "anchor_positions": 36,
+          "student_tokens": 897
+        },
+        {
+          "condition": "Interval 32",
+          "step": 16,
+          "kl": 0.07540645011016653,
+          "residual_student_mass": 1.6424391004774305e-07,
+          "completion_length_tokens": 75.9375,
+          "anchor_positions": 45,
+          "student_tokens": 1215
+        },
+        {
+          "condition": "Interval 32",
+          "step": 17,
+          "kl": 0.0069515500668746455,
+          "residual_student_mass": 2.2165477275848389e-07,
+          "completion_length_tokens": 48.375,
+          "anchor_positions": 32,
+          "student_tokens": 774
+        },
+        {
+          "condition": "Interval 32",
+          "step": 18,
+          "kl": 0.23379932135871825,
+          "residual_student_mass": 2.726912498474121e-07,
+          "completion_length_tokens": 65.375,
+          "anchor_positions": 40,
+          "student_tokens": 1046
+        },
+        {
+          "condition": "Interval 32",
+          "step": 19,
+          "kl": 0.26121383630022743,
+          "residual_student_mass": 3.861168683585474e-06,
+          "completion_length_tokens": 99.9375,
+          "anchor_positions": 59,
+          "student_tokens": 1599
+        },
+        {
+          "condition": "Interval 32",
+          "step": 20,
+          "kl": 0.20635573026355866,
+          "residual_student_mass": 3.4438239203559027e-07,
+          "completion_length_tokens": 57.9375,
+          "anchor_positions": 36,
+          "student_tokens": 927
+        },
+        {
+          "condition": "Interval 32",
+          "step": 21,
+          "kl": 0.25102926271923415,
+          "residual_student_mass": 3.1969764015891333e-07,
+          "completion_length_tokens": 112.4375,
+          "anchor_positions": 66,
+          "student_tokens": 1799
+        },
+        {
+          "condition": "Interval 32",
+          "step": 22,
+          "kl": 0.07943134304138467,
+          "residual_student_mass": 2.909062513664587e-07,
+          "completion_length_tokens": 120.375,
+          "anchor_positions": 67,
+          "student_tokens": 1926
+        },
+        {
+          "condition": "Interval 32",
+          "step": 23,
+          "kl": 0.4315444135221035,
+          "residual_student_mass": 5.861123402913412e-07,
+          "completion_length_tokens": 121.0,
+          "anchor_positions": 66,
+          "student_tokens": 1936
+        },
+        {
+          "condition": "Interval 32",
+          "step": 24,
+          "kl": 0.208195461589415,
+          "residual_student_mass": 6.050564521966978e-07,
+          "completion_length_tokens": 156.4375,
+          "anchor_positions": 86,
+          "student_tokens": 2503
+        },
+        {
+          "condition": "Interval 32",
+          "step": 25,
+          "kl": 0.21795842433561216,
+          "residual_student_mass": 1.0244866721650474e-06,
+          "completion_length_tokens": 216.375,
+          "anchor_positions": 117,
+          "student_tokens": 3462
+        },
+        {
+          "condition": "Interval 32",
+          "step": 26,
+          "kl": 0.301120359935424,
+          "residual_student_mass": 2.896413207054138e-07,
+          "completion_length_tokens": 239.4375,
+          "anchor_positions": 128,
+          "student_tokens": 3831
+        },
+        {
+          "condition": "Interval 32",
+          "step": 27,
+          "kl": 0.40561217094932667,
+          "residual_student_mass": 2.062648808190582e-06,
+          "completion_length_tokens": 202.5,
+          "anchor_positions": 109,
+          "student_tokens": 3240
+        },
+        {
+          "condition": "Interval 32",
+          "step": 28,
+          "kl": 0.24585026433169746,
+          "residual_student_mass": 7.992441003972833e-07,
+          "completion_length_tokens": 201.6875,
+          "anchor_positions": 110,
+          "student_tokens": 3227
+        },
+        {
+          "condition": "Interval 32",
+          "step": 29,
+          "kl": 0.3618526000442415,
+          "residual_student_mass": 3.1899731114225567e-06,
+          "completion_length_tokens": 197.875,
+          "anchor_positions": 106,
+          "student_tokens": 3166
+        },
+        {
+          "condition": "Interval 32",
+          "step": 30,
+          "kl": 0.2337753169341331,
+          "residual_student_mass": 8.935278112238103e-07,
+          "completion_length_tokens": 201.5625,
+          "anchor_positions": 110,
+          "student_tokens": 3225
+        },
+        {
+          "condition": "Interval 32",
+          "step": 31,
+          "kl": 0.5518436325078638,
+          "residual_student_mass": 9.192870213435247e-07,
+          "completion_length_tokens": 140.625,
+          "anchor_positions": 78,
+          "student_tokens": 2250
+        },
+        {
+          "condition": "Interval 32",
+          "step": 32,
+          "kl": 0.3913596934012407,
+          "residual_student_mass": 1.1490870125686067e-06,
+          "completion_length_tokens": 143.375,
+          "anchor_positions": 79,
+          "student_tokens": 2294
+        },
+        {
+          "condition": "Interval 32",
+          "step": 33,
+          "kl": 0.16437191414248975,
+          "residual_student_mass": 2.168215714491807e-06,
+          "completion_length_tokens": 140.5625,
+          "anchor_positions": 77,
+          "student_tokens": 2249
+        },
+        {
+          "condition": "Interval 32",
+          "step": 34,
+          "kl": 0.2234034573114222,
+          "residual_student_mass": 3.563596847209525e-07,
+          "completion_length_tokens": 81.0,
+          "anchor_positions": 47,
+          "student_tokens": 1296
+        },
+        {
+          "condition": "Interval 32",
+          "step": 35,
+          "kl": 0.2341692050039683,
+          "residual_student_mass": 4.151463508605957e-06,
+          "completion_length_tokens": 107.0,
+          "anchor_positions": 60,
+          "student_tokens": 1712
+        },
+        {
+          "condition": "Interval 32",
+          "step": 36,
+          "kl": 0.3247547563436596,
+          "residual_student_mass": 9.597147383340976e-05,
+          "completion_length_tokens": 153.875,
+          "anchor_positions": 82,
+          "student_tokens": 2462
+        },
+        {
+          "condition": "Interval 32",
+          "step": 37,
+          "kl": 0.15329700010493733,
+          "residual_student_mass": 3.64424889547783e-06,
+          "completion_length_tokens": 99.75,
+          "anchor_positions": 57,
+          "student_tokens": 1596
+        },
+        {
+          "condition": "Interval 32",
+          "step": 38,
+          "kl": 0.13098661653114388,
+          "residual_student_mass": 2.2039857021597928e-07,
+          "completion_length_tokens": 67.375,
+          "anchor_positions": 43,
+          "student_tokens": 1078
+        },
+        {
+          "condition": "Interval 32",
+          "step": 39,
+          "kl": 0.5728771746250592,
+          "residual_student_mass": 2.5776784811446914e-05,
+          "completion_length_tokens": 120.125,
+          "anchor_positions": 67,
+          "student_tokens": 1922
+        },
+        {
+          "condition": "Interval 32",
+          "step": 40,
+          "kl": 0.17667599236749704,
+          "residual_student_mass": 2.497434616088867e-06,
+          "completion_length_tokens": 103.625,
+          "anchor_positions": 60,
+          "student_tokens": 1658
+        },
+        {
+          "condition": "Interval 32",
+          "step": 41,
+          "kl": 0.2371975618131189,
+          "residual_student_mass": 2.5582724604113348e-05,
+          "completion_length_tokens": 100.375,
+          "anchor_positions": 58,
+          "student_tokens": 1606
+        },
+        {
+          "condition": "Interval 32",
+          "step": 42,
+          "kl": 0.2866188197911346,
+          "residual_student_mass": 1.1533498764038086e-05,
+          "completion_length_tokens": 131.3125,
+          "anchor_positions": 72,
+          "student_tokens": 2101
+        },
+        {
+          "condition": "Interval 32",
+          "step": 43,
+          "kl": 0.11017574853089654,
+          "residual_student_mass": 5.822915297288162e-07,
+          "completion_length_tokens": 90.1875,
+          "anchor_positions": 52,
+          "student_tokens": 1443
+        },
+        {
+          "condition": "Interval 32",
+          "step": 44,
+          "kl": 0.31249404108974416,
+          "residual_student_mass": 1.2808657707052029e-07,
+          "completion_length_tokens": 78.875,
+          "anchor_positions": 47,
+          "student_tokens": 1262
+        },
+        {
+          "condition": "Interval 32",
+          "step": 45,
+          "kl": 0.04315970861754792,
+          "residual_student_mass": 2.0927853054470486e-07,
+          "completion_length_tokens": 76.0625,
+          "anchor_positions": 45,
+          "student_tokens": 1217
+        },
+        {
+          "condition": "Interval 32",
+          "step": 46,
+          "kl": 0.5234294149433651,
+          "residual_student_mass": 2.109829117270077e-06,
+          "completion_length_tokens": 123.125,
+          "anchor_positions": 68,
+          "student_tokens": 1970
+        },
+        {
+          "condition": "Interval 32",
+          "step": 47,
+          "kl": 0.2458847214739528,
+          "residual_student_mass": 7.0584447760331e-08,
+          "completion_length_tokens": 61.9375,
+          "anchor_positions": 38,
+          "student_tokens": 991
+        },
+        {
+          "condition": "Interval 32",
+          "step": 48,
+          "kl": 0.3184952779138678,
+          "residual_student_mass": 0.00014739686792547053,
+          "completion_length_tokens": 141.5,
+          "anchor_positions": 77,
+          "student_tokens": 2264
+        },
+        {
+          "condition": "Interval 32",
+          "step": 49,
+          "kl": 0.23903934190165,
+          "residual_student_mass": 1.4537945389747621e-05,
+          "completion_length_tokens": 108.8125,
+          "anchor_positions": 64,
+          "student_tokens": 1741
+        },
+        {
+          "condition": "Interval 32",
+          "step": 50,
+          "kl": 0.5090971003684929,
+          "residual_student_mass": 5.838076273600261e-06,
+          "completion_length_tokens": 132.5625,
+          "anchor_positions": 75,
+          "student_tokens": 2121
+        },
+        {
+          "condition": "Interval 32",
+          "step": 51,
+          "kl": 0.41894303855180987,
+          "residual_student_mass": 4.736409671064736e-06,
+          "completion_length_tokens": 126.4375,
+          "anchor_positions": 69,
+          "student_tokens": 2023
+        },
+        {
+          "condition": "Interval 32",
+          "step": 52,
+          "kl": 0.08037812965214752,
+          "residual_student_mass": 9.162951323945644e-07,
+          "completion_length_tokens": 99.5625,
+          "anchor_positions": 59,
+          "student_tokens": 1593
+        },
+        {
+          "condition": "Interval 32",
+          "step": 53,
+          "kl": 0.25557309242423104,
+          "residual_student_mass": 3.892750967116583e-06,
+          "completion_length_tokens": 153.25,
+          "anchor_positions": 84,
+          "student_tokens": 2452
+        },
+        {
+          "condition": "Interval 32",
+          "step": 54,
+          "kl": 0.10343382944702158,
+          "residual_student_mass": 5.5631001790364584e-08,
+          "completion_length_tokens": 138.5,
+          "anchor_positions": 75,
+          "student_tokens": 2216
+        },
+        {
+          "condition": "Interval 32",
+          "step": 55,
+          "kl": 0.07273503196410598,
+          "residual_student_mass": 1.3328980708467788e-06,
+          "completion_length_tokens": 119.8125,
+          "anchor_positions": 69,
+          "student_tokens": 1917
+        },
+        {
+          "condition": "Interval 32",
+          "step": 56,
+          "kl": 0.13612575443449645,
+          "residual_student_mass": 4.475766962224787e-07,
+          "completion_length_tokens": 93.0625,
+          "anchor_positions": 55,
+          "student_tokens": 1489
+        },
+        {
+          "condition": "Interval 32",
+          "step": 57,
+          "kl": 0.2882704270468606,
+          "residual_student_mass": 1.433542219258971e-06,
+          "completion_length_tokens": 103.125,
+          "anchor_positions": 59,
+          "student_tokens": 1650
+        },
+        {
+          "condition": "Interval 32",
+          "step": 58,
+          "kl": 0.5297208019575078,
+          "residual_student_mass": 4.4303470187717014e-05,
+          "completion_length_tokens": 170.5,
+          "anchor_positions": 90,
+          "student_tokens": 2728
+        },
+        {
+          "condition": "Interval 32",
+          "step": 59,
+          "kl": 0.4372598145032602,
+          "residual_student_mass": 6.697151098358498e-08,
+          "completion_length_tokens": 163.0,
+          "anchor_positions": 89,
+          "student_tokens": 2608
+        },
+        {
+          "condition": "Interval 32",
+          "step": 60,
+          "kl": 0.35889554425191794,
+          "residual_student_mass": 3.5228667321143213e-06,
+          "completion_length_tokens": 141.375,
+          "anchor_positions": 77,
+          "student_tokens": 2262
+        },
+        {
+          "condition": "Interval 32",
+          "step": 61,
+          "kl": 0.19884425303414724,
+          "residual_student_mass": 8.891840450099258e-08,
+          "completion_length_tokens": 106.1875,
+          "anchor_positions": 61,
+          "student_tokens": 1699
+        },
+        {
+          "condition": "Interval 32",
+          "step": 62,
+          "kl": 0.3347276765409206,
+          "residual_student_mass": 0.00011905282735824585,
+          "completion_length_tokens": 131.375,
+          "anchor_positions": 72,
+          "student_tokens": 2102
+        },
+        {
+          "condition": "Interval 32",
+          "step": 63,
+          "kl": 0.2893726114941134,
+          "residual_student_mass": 9.077141083866716e-06,
+          "completion_length_tokens": 157.0625,
+          "anchor_positions": 83,
+          "student_tokens": 2513
+        },
+        {
+          "condition": "Interval 32",
+          "step": 64,
+          "kl": 0.15185410765487534,
+          "residual_student_mass": 3.155989524645683e-07,
+          "completion_length_tokens": 134.8125,
+          "anchor_positions": 78,
+          "student_tokens": 2157
+        },
+        {
+          "condition": "Interval 32",
+          "step": 65,
+          "kl": 0.27540322631697084,
+          "residual_student_mass": 8.839927613735199e-05,
+          "completion_length_tokens": 178.375,
+          "anchor_positions": 96,
+          "student_tokens": 2854
+        },
+        {
+          "condition": "Interval 32",
+          "step": 66,
+          "kl": 0.1925098795398835,
+          "residual_student_mass": 2.9886272591604316e-07,
+          "completion_length_tokens": 128.5625,
+          "anchor_positions": 71,
+          "student_tokens": 2057
+        },
+        {
+          "condition": "Interval 32",
+          "step": 67,
+          "kl": 0.28138699609429263,
+          "residual_student_mass": 3.133064661270533e-07,
+          "completion_length_tokens": 143.8125,
+          "anchor_positions": 78,
+          "student_tokens": 2301
+        },
+        {
+          "condition": "Interval 32",
+          "step": 68,
+          "kl": 0.18828065101799557,
+          "residual_student_mass": 2.591506294582201e-07,
+          "completion_length_tokens": 122.375,
+          "anchor_positions": 69,
+          "student_tokens": 1958
+        },
+        {
+          "condition": "Interval 32",
+          "step": 69,
+          "kl": 0.28319887708075003,
+          "residual_student_mass": 1.5477557758708577e-06,
+          "completion_length_tokens": 171.0625,
+          "anchor_positions": 91,
+          "student_tokens": 2737
+        },
+        {
+          "condition": "Interval 32",
+          "step": 70,
+          "kl": 0.2193732162699221,
+          "residual_student_mass": 0.00012878641005485288,
+          "completion_length_tokens": 169.75,
+          "anchor_positions": 93,
+          "student_tokens": 2716
+        },
+        {
+          "condition": "Interval 32",
+          "step": 71,
+          "kl": 0.3410657746280511,
+          "residual_student_mass": 4.448388752184416e-06,
+          "completion_length_tokens": 137.125,
+          "anchor_positions": 76,
+          "student_tokens": 2194
+        },
+        {
+          "condition": "Interval 32",
+          "step": 72,
+          "kl": 0.17169326610551916,
+          "residual_student_mass": 7.834233028787962e-06,
+          "completion_length_tokens": 126.0,
+          "anchor_positions": 71,
+          "student_tokens": 2016
+        },
+        {
+          "condition": "Interval 32",
+          "step": 73,
+          "kl": 0.23561498859561347,
+          "residual_student_mass": 8.409281811082219e-07,
+          "completion_length_tokens": 150.9375,
+          "anchor_positions": 83,
+          "student_tokens": 2415
+        },
+        {
+          "condition": "Interval 32",
+          "step": 74,
+          "kl": 0.29895573959699523,
+          "residual_student_mass": 1.9818544387817384e-07,
+          "completion_length_tokens": 144.0625,
+          "anchor_positions": 80,
+          "student_tokens": 2305
+        },
+        {
+          "condition": "Interval 32",
+          "step": 75,
+          "kl": 0.30175049375968277,
+          "residual_student_mass": 6.652155587839526e-05,
+          "completion_length_tokens": 160.0,
+          "anchor_positions": 86,
+          "student_tokens": 2560
+        },
+        {
+          "condition": "Interval 32",
+          "step": 76,
+          "kl": 0.2175265176019357,
+          "residual_student_mass": 3.1310142857013366e-05,
+          "completion_length_tokens": 188.9375,
+          "anchor_positions": 101,
+          "student_tokens": 3023
+        },
+        {
+          "condition": "Interval 32",
+          "step": 77,
+          "kl": 0.22429378596660762,
+          "residual_student_mass": 2.952510455869279e-05,
+          "completion_length_tokens": 196.5625,
+          "anchor_positions": 106,
+          "student_tokens": 3145
+        },
+        {
+          "condition": "Interval 32",
+          "step": 78,
+          "kl": 0.20061561963084953,
+          "residual_student_mass": 2.963420672294421e-06,
+          "completion_length_tokens": 143.375,
+          "anchor_positions": 78,
+          "student_tokens": 2294
+        },
+        {
+          "condition": "Interval 32",
+          "step": 79,
+          "kl": 0.18152669929169463,
+          "residual_student_mass": 6.008934188675095e-06,
+          "completion_length_tokens": 167.25,
+          "anchor_positions": 91,
+          "student_tokens": 2676
+        },
+        {
+          "condition": "Interval 32",
+          "step": 80,
+          "kl": 0.4373483114955154,
+          "residual_student_mass": 4.6441952387491865e-06,
+          "completion_length_tokens": 204.0625,
+          "anchor_positions": 108,
+          "student_tokens": 3265
+        },
+        {
+          "condition": "Interval 32",
+          "step": 81,
+          "kl": 0.16750895446898437,
+          "residual_student_mass": 2.6827766781761535e-06,
+          "completion_length_tokens": 194.625,
+          "anchor_positions": 105,
+          "student_tokens": 3114
+        },
+        {
+          "condition": "Interval 32",
+          "step": 82,
+          "kl": 0.27126207653938994,
+          "residual_student_mass": 1.633606973241587e-05,
+          "completion_length_tokens": 229.3125,
+          "anchor_positions": 122,
+          "student_tokens": 3669
+        },
+        {
+          "condition": "Interval 32",
+          "step": 83,
+          "kl": 0.14746989574781955,
+          "residual_student_mass": 9.317507689026581e-08,
+          "completion_length_tokens": 157.125,
+          "anchor_positions": 87,
+          "student_tokens": 2514
+        },
+        {
+          "condition": "Interval 32",
+          "step": 84,
+          "kl": 0.20111167569700064,
+          "residual_student_mass": 3.0849224481827173e-06,
+          "completion_length_tokens": 144.625,
+          "anchor_positions": 78,
+          "student_tokens": 2314
+        },
+        {
+          "condition": "Interval 32",
+          "step": 85,
+          "kl": 0.16543587365120768,
+          "residual_student_mass": 1.6235169910249255e-06,
+          "completion_length_tokens": 151.9375,
+          "anchor_positions": 84,
+          "student_tokens": 2431
+        },
+        {
+          "condition": "Interval 32",
+          "step": 86,
+          "kl": 0.4173188614977099,
+          "residual_student_mass": 5.093437654000742e-06,
+          "completion_length_tokens": 203.375,
+          "anchor_positions": 108,
+          "student_tokens": 3254
+        },
+        {
+          "condition": "Interval 32",
+          "step": 87,
+          "kl": 0.18678342382623697,
+          "residual_student_mass": 1.0725149174326474e-05,
+          "completion_length_tokens": 177.9375,
+          "anchor_positions": 97,
+          "student_tokens": 2847
+        },
+        {
+          "condition": "Interval 32",
+          "step": 88,
+          "kl": 0.26675883837148934,
+          "residual_student_mass": 1.1525421499091887e-06,
+          "completion_length_tokens": 197.125,
+          "anchor_positions": 107,
+          "student_tokens": 3154
+        },
+        {
+          "condition": "Interval 32",
+          "step": 89,
+          "kl": 0.2371263360117912,
+          "residual_student_mass": 3.661270494814272e-06,
+          "completion_length_tokens": 199.9375,
+          "anchor_positions": 108,
+          "student_tokens": 3199
+        },
+        {
+          "condition": "Interval 32",
+          "step": 90,
+          "kl": 0.2678714847124006,
+          "residual_student_mass": 6.583721741386082e-06,
+          "completion_length_tokens": 170.875,
+          "anchor_positions": 92,
+          "student_tokens": 2734
+        },
+        {
+          "condition": "Interval 32",
+          "step": 91,
+          "kl": 0.24111821752547077,
+          "residual_student_mass": 1.231514581359259e-05,
+          "completion_length_tokens": 191.25,
+          "anchor_positions": 101,
+          "student_tokens": 3060
+        },
+        {
+          "condition": "Interval 32",
+          "step": 92,
+          "kl": 0.3497003441376435,
+          "residual_student_mass": 3.905131899077317e-07,
+          "completion_length_tokens": 159.25,
+          "anchor_positions": 87,
+          "student_tokens": 2548
+        },
+        {
+          "condition": "Interval 32",
+          "step": 93,
+          "kl": 0.2681381407819509,
+          "residual_student_mass": 6.106010703153388e-07,
+          "completion_length_tokens": 159.6875,
+          "anchor_positions": 86,
+          "student_tokens": 2555
+        },
+        {
+          "condition": "Interval 32",
+          "step": 94,
+          "kl": 0.1672309633825524,
+          "residual_student_mass": 9.173696691339666e-06,
+          "completion_length_tokens": 162.9375,
+          "anchor_positions": 88,
+          "student_tokens": 2607
+        },
+        {
+          "condition": "Interval 32",
+          "step": 95,
+          "kl": 0.09724607842504852,
+          "residual_student_mass": 4.1316856037486686e-08,
+          "completion_length_tokens": 160.9375,
+          "anchor_positions": 88,
+          "student_tokens": 2575
+        },
+        {
+          "condition": "Interval 32",
+          "step": 96,
+          "kl": 0.2930179623849234,
+          "residual_student_mass": 2.969028773131194e-05,
+          "completion_length_tokens": 203.0,
+          "anchor_positions": 108,
+          "student_tokens": 3248
+        },
+        {
+          "condition": "Interval 32",
+          "step": 97,
+          "kl": 0.19194569301100398,
+          "residual_student_mass": 2.6147989999680297e-06,
+          "completion_length_tokens": 156.4375,
+          "anchor_positions": 84,
+          "student_tokens": 2503
+        },
+        {
+          "condition": "Interval 32",
+          "step": 98,
+          "kl": 0.16547904569279212,
+          "residual_student_mass": 7.983004109243329e-07,
+          "completion_length_tokens": 164.625,
+          "anchor_positions": 89,
+          "student_tokens": 2634
+        },
+        {
+          "condition": "Interval 32",
+          "step": 99,
+          "kl": 0.38700694262525503,
+          "residual_student_mass": 9.685754776000977e-08,
+          "completion_length_tokens": 117.0625,
+          "anchor_positions": 64,
+          "student_tokens": 1873
+        },
+        {
+          "condition": "Interval 32",
+          "step": 100,
+          "kl": 0.22093700317690282,
+          "residual_student_mass": 9.515829253614995e-08,
+          "completion_length_tokens": 99.1875,
+          "anchor_positions": 57,
+          "student_tokens": 1587
+        },
+        {
+          "condition": "Interval 32",
+          "step": 101,
+          "kl": 0.15074395862779738,
+          "residual_student_mass": 3.723359443772007e-05,
+          "completion_length_tokens": 128.625,
+          "anchor_positions": 71,
+          "student_tokens": 2058
+        },
+        {
+          "condition": "Interval 32",
+          "step": 102,
+          "kl": 0.29226304270238757,
+          "residual_student_mass": 5.672054906045237e-08,
+          "completion_length_tokens": 108.5,
+          "anchor_positions": 62,
+          "student_tokens": 1736
+        },
+        {
+          "condition": "Interval 32",
+          "step": 103,
+          "kl": 0.5574241068080339,
+          "residual_student_mass": 2.3016562828650842e-07,
+          "completion_length_tokens": 116.0625,
+          "anchor_positions": 65,
+          "student_tokens": 1857
+        },
+        {
+          "condition": "Interval 32",
+          "step": 104,
+          "kl": 0.046844013326327885,
+          "residual_student_mass": 7.505770082826968e-08,
+          "completion_length_tokens": 90.125,
+          "anchor_positions": 54,
+          "student_tokens": 1442
+        },
+        {
+          "condition": "Interval 32",
+          "step": 105,
+          "kl": 0.26776098330880954,
+          "residual_student_mass": 3.075421746097394e-06,
+          "completion_length_tokens": 115.4375,
+          "anchor_positions": 67,
+          "student_tokens": 1847
+        },
+        {
+          "condition": "Interval 32",
+          "step": 106,
+          "kl": 0.09341448475419525,
+          "residual_student_mass": 5.6230796957915685e-08,
+          "completion_length_tokens": 93.1875,
+          "anchor_positions": 53,
+          "student_tokens": 1491
+        },
+        {
+          "condition": "Interval 32",
+          "step": 107,
+          "kl": 0.11009410523372343,
+          "residual_student_mass": 3.5417252692623413e-08,
+          "completion_length_tokens": 118.0,
+          "anchor_positions": 69,
+          "student_tokens": 1888
+        },
+        {
+          "condition": "Interval 32",
+          "step": 108,
+          "kl": 0.1071780310113372,
+          "residual_student_mass": 7.842716417814556e-08,
+          "completion_length_tokens": 61.875,
+          "anchor_positions": 38,
+          "student_tokens": 990
+        },
+        {
+          "condition": "Interval 32",
+          "step": 109,
+          "kl": 0.07079331903951884,
+          "residual_student_mass": 7.326404253641765e-08,
+          "completion_length_tokens": 79.5,
+          "anchor_positions": 48,
+          "student_tokens": 1272
+        },
+        {
+          "condition": "Interval 32",
+          "step": 110,
+          "kl": 0.16309526284658138,
+          "residual_student_mass": 7.901080819063408e-08,
+          "completion_length_tokens": 69.6875,
+          "anchor_positions": 43,
+          "student_tokens": 1115
+        },
+        {
+          "condition": "Interval 32",
+          "step": 111,
+          "kl": 0.233789335128345,
+          "residual_student_mass": 5.5800092981216756e-08,
+          "completion_length_tokens": 79.5625,
+          "anchor_positions": 47,
+          "student_tokens": 1273
+        },
+        {
+          "condition": "Interval 32",
+          "step": 112,
+          "kl": 0.3996189331713358,
+          "residual_student_mass": 4.386002162717423e-08,
+          "completion_length_tokens": 94.9375,
+          "anchor_positions": 53,
+          "student_tokens": 1519
+        },
+        {
+          "condition": "Interval 32",
+          "step": 113,
+          "kl": 0.04084107277227932,
+          "residual_student_mass": 6.099079930505087e-08,
+          "completion_length_tokens": 71.125,
+          "anchor_positions": 43,
+          "student_tokens": 1138
+        },
+        {
+          "condition": "Interval 32",
+          "step": 114,
+          "kl": 0.43265091086554514,
+          "residual_student_mass": 2.448047910417829e-08,
+          "completion_length_tokens": 91.875,
+          "anchor_positions": 56,
+          "student_tokens": 1470
+        },
+        {
+          "condition": "Interval 32",
+          "step": 115,
+          "kl": 0.29619269269558235,
+          "residual_student_mass": 5.029141902923584e-08,
+          "completion_length_tokens": 113.625,
+          "anchor_positions": 64,
+          "student_tokens": 1818
+        },
+        {
+          "condition": "Interval 32",
+          "step": 116,
+          "kl": 0.26823166216875943,
+          "residual_student_mass": 3.949078646573153e-06,
+          "completion_length_tokens": 95.6875,
+          "anchor_positions": 55,
+          "student_tokens": 1531
+        },
+        {
+          "condition": "Interval 32",
+          "step": 117,
+          "kl": 0.10568079380133599,
+          "residual_student_mass": 4.9147689551637884e-08,
+          "completion_length_tokens": 98.25,
+          "anchor_positions": 57,
+          "student_tokens": 1572
+        },
+        {
+          "condition": "Interval 32",
+          "step": 118,
+          "kl": 0.40984661403050465,
+          "residual_student_mass": 3.521089200620298e-07,
+          "completion_length_tokens": 94.0,
+          "anchor_positions": 54,
+          "student_tokens": 1504
+        },
+        {
+          "condition": "Interval 32",
+          "step": 119,
+          "kl": 0.2623652308177527,
+          "residual_student_mass": 2.5149314634261594e-06,
+          "completion_length_tokens": 113.125,
+          "anchor_positions": 62,
+          "student_tokens": 1810
+        },
+        {
+          "condition": "Interval 32",
+          "step": 120,
+          "kl": 0.1475565407221128,
+          "residual_student_mass": 5.510618101875737e-08,
+          "completion_length_tokens": 89.9375,
+          "anchor_positions": 53,
+          "student_tokens": 1439
+        },
+        {
+          "condition": "Interval 32",
+          "step": 121,
+          "kl": 0.42354625647823985,
+          "residual_student_mass": 3.650784492492676e-07,
+          "completion_length_tokens": 148.0,
+          "anchor_positions": 80,
+          "student_tokens": 2368
+        },
+        {
+          "condition": "Interval 32",
+          "step": 122,
+          "kl": 0.26105967288016846,
+          "residual_student_mass": 8.292820142663043e-08,
+          "completion_length_tokens": 126.25,
+          "anchor_positions": 69,
+          "student_tokens": 2020
+        },
+        {
+          "condition": "Interval 32",
+          "step": 123,
+          "kl": 0.13490612147581393,
+          "residual_student_mass": 1.1457337273491753e-06,
+          "completion_length_tokens": 90.625,
+          "anchor_positions": 54,
+          "student_tokens": 1450
+        },
+        {
+          "condition": "Interval 32",
+          "step": 124,
+          "kl": 0.1822718509144798,
+          "residual_student_mass": 5.195389932660914e-07,
+          "completion_length_tokens": 115.0,
+          "anchor_positions": 67,
+          "student_tokens": 1840
+        },
+        {
+          "condition": "Interval 32",
+          "step": 125,
+          "kl": 0.13631361233315556,
+          "residual_student_mass": 1.757175891430347e-07,
+          "completion_length_tokens": 142.5,
+          "anchor_positions": 77,
+          "student_tokens": 2280
+        },
+        {
+          "condition": "Interval 32",
+          "step": 126,
+          "kl": 0.16590507352188777,
+          "residual_student_mass": 1.1056216795053056e-05,
+          "completion_length_tokens": 120.75,
+          "anchor_positions": 67,
+          "student_tokens": 1932
+        },
+        {
+          "condition": "Interval 32",
+          "step": 127,
+          "kl": 0.16656695844599542,
+          "residual_student_mass": 2.4641432413240756e-07,
+          "completion_length_tokens": 148.0625,
+          "anchor_positions": 82,
+          "student_tokens": 2369
+        },
+        {
+          "condition": "Interval 32",
+          "step": 128,
+          "kl": 0.006383234134220653,
+          "residual_student_mass": 7.975269371355084e-08,
+          "completion_length_tokens": 127.8125,
+          "anchor_positions": 71,
+          "student_tokens": 2045
+        },
+        {
+          "condition": "Interval 32",
+          "step": 129,
+          "kl": 0.1792638783722752,
+          "residual_student_mass": 7.641315460205077e-06,
+          "completion_length_tokens": 119.125,
+          "anchor_positions": 65,
+          "student_tokens": 1906
+        },
+        {
+          "condition": "Interval 32",
+          "step": 130,
+          "kl": 0.20424228854653248,
+          "residual_student_mass": 1.0220443501191981e-06,
+          "completion_length_tokens": 120.1875,
+          "anchor_positions": 68,
+          "student_tokens": 1923
+        },
+        {
+          "condition": "Interval 32",
+          "step": 131,
+          "kl": 0.1134501864297149,
+          "residual_student_mass": 2.0384788513183595e-06,
+          "completion_length_tokens": 120.375,
+          "anchor_positions": 65,
+          "student_tokens": 1926
+        },
+        {
+          "condition": "Interval 32",
+          "step": 132,
+          "kl": 0.2820649384784629,
+          "residual_student_mass": 9.678304195404053e-07,
+          "completion_length_tokens": 147.0625,
+          "anchor_positions": 80,
+          "student_tokens": 2353
+        },
+        {
+          "condition": "Interval 32",
+          "step": 133,
+          "kl": 0.12609032415077615,
+          "residual_student_mass": 4.329464652321556e-06,
+          "completion_length_tokens": 161.75,
+          "anchor_positions": 88,
+          "student_tokens": 2588
+        },
+        {
+          "condition": "Interval 32",
+          "step": 134,
+          "kl": 0.5226800055257633,
+          "residual_student_mass": 8.858483413170124e-07,
+          "completion_length_tokens": 161.9375,
+          "anchor_positions": 87,
+          "student_tokens": 2591
+        },
+        {
+          "condition": "Interval 32",
+          "step": 135,
+          "kl": 0.14210006890679974,
+          "residual_student_mass": 2.839499049716526e-07,
+          "completion_length_tokens": 132.3125,
+          "anchor_positions": 72,
+          "student_tokens": 2117
+        },
+        {
+          "condition": "Interval 32",
+          "step": 136,
+          "kl": 0.37900095303949916,
+          "residual_student_mass": 6.475566345968364e-07,
+          "completion_length_tokens": 151.75,
+          "anchor_positions": 81,
+          "student_tokens": 2428
+        },
+        {
+          "condition": "Interval 32",
+          "step": 137,
+          "kl": 0.12288071638626484,
+          "residual_student_mass": 3.6809895489666914e-06,
+          "completion_length_tokens": 133.6875,
+          "anchor_positions": 74,
+          "student_tokens": 2139
+        },
+        {
+          "condition": "Interval 32",
+          "step": 138,
+          "kl": 0.14980353511551137,
+          "residual_student_mass": 3.0592263463031814e-07,
+          "completion_length_tokens": 149.1875,
+          "anchor_positions": 83,
+          "student_tokens": 2387
+        },
+        {
+          "condition": "Interval 32",
+          "step": 139,
+          "kl": 0.1892012858084445,
+          "residual_student_mass": 5.3185683030348555e-06,
+          "completion_length_tokens": 194.4375,
+          "anchor_positions": 104,
+          "student_tokens": 3111
+        },
+        {
+          "condition": "Interval 32",
+          "step": 140,
+          "kl": 0.12945280015663285,
+          "residual_student_mass": 1.6548131641588712e-07,
+          "completion_length_tokens": 138.8125,
+          "anchor_positions": 76,
+          "student_tokens": 2221
+        },
+        {
+          "condition": "Interval 32",
+          "step": 141,
+          "kl": 0.16755869091275064,
+          "residual_student_mass": 2.0404872686966606e-05,
+          "completion_length_tokens": 167.4375,
+          "anchor_positions": 92,
+          "student_tokens": 2679
+        },
+        {
+          "condition": "Interval 32",
+          "step": 142,
+          "kl": 0.14488899226659047,
+          "residual_student_mass": 2.240312510523303e-07,
+          "completion_length_tokens": 155.125,
+          "anchor_positions": 87,
+          "student_tokens": 2482
+        },
+        {
+          "condition": "Interval 32",
+          "step": 143,
+          "kl": 0.0780038803197477,
+          "residual_student_mass": 1.1633677654955761e-07,
+          "completion_length_tokens": 151.75,
+          "anchor_positions": 83,
+          "student_tokens": 2428
+        },
+        {
+          "condition": "Interval 32",
+          "step": 144,
+          "kl": 0.09766826090363001,
+          "residual_student_mass": 1.0256643419141892e-06,
+          "completion_length_tokens": 140.625,
+          "anchor_positions": 77,
+          "student_tokens": 2250
+        },
+        {
+          "condition": "Interval 32",
+          "step": 145,
+          "kl": 0.15657019469946137,
+          "residual_student_mass": 1.2406083040459212e-07,
+          "completion_length_tokens": 158.4375,
+          "anchor_positions": 86,
+          "student_tokens": 2535
+        },
+        {
+          "condition": "Interval 32",
+          "step": 146,
+          "kl": 0.4090694394408219,
+          "residual_student_mass": 2.1371496729103915e-06,
+          "completion_length_tokens": 154.5,
+          "anchor_positions": 83,
+          "student_tokens": 2472
+        },
+        {
+          "condition": "Interval 32",
+          "step": 147,
+          "kl": 0.2874770038812814,
+          "residual_student_mass": 6.5116538214929325e-06,
+          "completion_length_tokens": 176.375,
+          "anchor_positions": 97,
+          "student_tokens": 2822
+        },
+        {
+          "condition": "Interval 32",
+          "step": 148,
+          "kl": 0.28151638004153,
+          "residual_student_mass": 1.2400506556719198e-07,
+          "completion_length_tokens": 161.1875,
+          "anchor_positions": 87,
+          "student_tokens": 2579
+        },
+        {
+          "condition": "Interval 32",
+          "step": 149,
+          "kl": 0.1881475847355775,
+          "residual_student_mass": 1.7112301241966987e-07,
+          "completion_length_tokens": 175.25,
+          "anchor_positions": 93,
+          "student_tokens": 2804
+        },
+        {
+          "condition": "Interval 32",
+          "step": 150,
+          "kl": 0.27949384322476345,
+          "residual_student_mass": 1.7571449279785157e-06,
+          "completion_length_tokens": 187.0625,
+          "anchor_positions": 100,
+          "student_tokens": 2993
+        },
+        {
+          "condition": "Interval 32",
+          "step": 151,
+          "kl": 0.5027061664618814,
+          "residual_student_mass": 3.856576007345449e-05,
+          "completion_length_tokens": 217.125,
+          "anchor_positions": 115,
+          "student_tokens": 3474
+        },
+        {
+          "condition": "Interval 32",
+          "step": 152,
+          "kl": 0.2302659219118564,
+          "residual_student_mass": 3.062256979286124e-07,
+          "completion_length_tokens": 203.5625,
+          "anchor_positions": 109,
+          "student_tokens": 3257
+        },
+        {
+          "condition": "Interval 32",
+          "step": 153,
+          "kl": 0.3126470881761558,
+          "residual_student_mass": 9.369308298284357e-06,
+          "completion_length_tokens": 209.125,
+          "anchor_positions": 110,
+          "student_tokens": 3346
+        },
+        {
+          "condition": "Interval 32",
+          "step": 154,
+          "kl": 0.19298300184615022,
+          "residual_student_mass": 2.658367156982422e-07,
+          "completion_length_tokens": 184.0,
+          "anchor_positions": 100,
+          "student_tokens": 2944
+        },
+        {
+          "condition": "Interval 32",
+          "step": 155,
+          "kl": 0.36138686323104185,
+          "residual_student_mass": 3.894272013607188e-05,
+          "completion_length_tokens": 219.25,
+          "anchor_positions": 117,
+          "student_tokens": 3508
+        },
+        {
+          "condition": "Interval 32",
+          "step": 156,
+          "kl": 0.5328608402710688,
+          "residual_student_mass": 1.1863060367917552e-07,
+          "completion_length_tokens": 190.9375,
+          "anchor_positions": 103,
+          "student_tokens": 3055
+        },
+        {
+          "condition": "Interval 32",
+          "step": 157,
+          "kl": 0.23934776098897095,
+          "residual_student_mass": 4.627355715123619e-06,
+          "completion_length_tokens": 233.25,
+          "anchor_positions": 123,
+          "student_tokens": 3732
+        },
+        {
+          "condition": "Interval 32",
+          "step": 158,
+          "kl": 0.4771391610845599,
+          "residual_student_mass": 2.0236339209214697e-05,
+          "completion_length_tokens": 195.0625,
+          "anchor_positions": 106,
+          "student_tokens": 3121
+        },
+        {
+          "condition": "Interval 32",
+          "step": 159,
+          "kl": 0.2521248930034253,
+          "residual_student_mass": 1.5657681685227615e-06,
+          "completion_length_tokens": 195.375,
+          "anchor_positions": 104,
+          "student_tokens": 3126
+        },
+        {
+          "condition": "Interval 32",
+          "step": 160,
+          "kl": 0.289516940475029,
+          "residual_student_mass": 1.056038815042247e-07,
+          "completion_length_tokens": 166.5,
+          "anchor_positions": 92,
+          "student_tokens": 2664
+        },
+        {
+          "condition": "Interval 32",
+          "step": 161,
+          "kl": 0.29125655576309656,
+          "residual_student_mass": 6.07597735501075e-07,
+          "completion_length_tokens": 249.125,
+          "anchor_positions": 129,
+          "student_tokens": 3986
+        },
+        {
+          "condition": "Interval 32",
+          "step": 162,
+          "kl": 0.27756156439053525,
+          "residual_student_mass": 4.692989237168256e-06,
+          "completion_length_tokens": 189.6875,
+          "anchor_positions": 102,
+          "student_tokens": 3035
+        },
+        {
+          "condition": "Interval 32",
+          "step": 163,
+          "kl": 0.24848029829552815,
+          "residual_student_mass": 3.67154594229049e-05,
+          "completion_length_tokens": 222.375,
+          "anchor_positions": 119,
+          "student_tokens": 3558
+        },
+        {
+          "condition": "Interval 32",
+          "step": 164,
+          "kl": 0.3814842640496985,
+          "residual_student_mass": 1.1222856538789767e-05,
+          "completion_length_tokens": 210.9375,
+          "anchor_positions": 111,
+          "student_tokens": 3375
+        },
+        {
+          "condition": "Interval 32",
+          "step": 165,
+          "kl": 0.16599768295328204,
+          "residual_student_mass": 7.873357728470204e-07,
+          "completion_length_tokens": 161.6875,
+          "anchor_positions": 86,
+          "student_tokens": 2587
+        },
+        {
+          "condition": "Interval 32",
+          "step": 166,
+          "kl": 0.28124172954963317,
+          "residual_student_mass": 1.3050280119243421e-06,
+          "completion_length_tokens": 256.625,
+          "anchor_positions": 133,
+          "student_tokens": 4106
+        },
+        {
+          "condition": "Interval 32",
+          "step": 167,
+          "kl": 0.3911567700430457,
+          "residual_student_mass": 4.483772827698304e-07,
+          "completion_length_tokens": 211.625,
+          "anchor_positions": 111,
+          "student_tokens": 3386
+        },
+        {
+          "condition": "Interval 32",
+          "step": 168,
+          "kl": 0.174214927024876,
+          "residual_student_mass": 5.837568302744443e-07,
+          "completion_length_tokens": 177.375,
+          "anchor_positions": 97,
+          "student_tokens": 2838
+        },
+        {
+          "condition": "Interval 32",
+          "step": 169,
+          "kl": 0.2593343704431871,
+          "residual_student_mass": 1.937440298135998e-06,
+          "completion_length_tokens": 190.25,
+          "anchor_positions": 103,
+          "student_tokens": 3044
+        },
+        {
+          "condition": "Interval 32",
+          "step": 170,
+          "kl": 0.31543184957268394,
+          "residual_student_mass": 1.0034467420007428e-05,
+          "completion_length_tokens": 223.5,
+          "anchor_positions": 117,
+          "student_tokens": 3576
+        },
+        {
+          "condition": "Interval 32",
+          "step": 171,
+          "kl": 0.27326233106738307,
+          "residual_student_mass": 9.458689462570917e-07,
+          "completion_length_tokens": 154.5625,
+          "anchor_positions": 84,
+          "student_tokens": 2473
+        },
+        {
+          "condition": "Interval 32",
+          "step": 172,
+          "kl": 0.3449302998716654,
+          "residual_student_mass": 1.3734983361285666e-07,
+          "completion_length_tokens": 122.25,
+          "anchor_positions": 69,
+          "student_tokens": 1956
+        },
+        {
+          "condition": "Interval 32",
+          "step": 173,
+          "kl": 0.19236952458201328,
+          "residual_student_mass": 1.8935525015498816e-05,
+          "completion_length_tokens": 161.1875,
+          "anchor_positions": 89,
+          "student_tokens": 2579
+        },
+        {
+          "condition": "Interval 32",
+          "step": 174,
+          "kl": 0.10561698134338511,
+          "residual_student_mass": 1.2715657552083333e-07,
+          "completion_length_tokens": 135.875,
+          "anchor_positions": 75,
+          "student_tokens": 2174
+        },
+        {
+          "condition": "Interval 32",
+          "step": 175,
+          "kl": 0.19843059872547467,
+          "residual_student_mass": 6.516237516660948e-07,
+          "completion_length_tokens": 134.5625,
+          "anchor_positions": 74,
+          "student_tokens": 2153
+        },
+        {
+          "condition": "Interval 32",
+          "step": 176,
+          "kl": 0.1256365595457212,
+          "residual_student_mass": 1.893689235051473e-07,
+          "completion_length_tokens": 176.375,
+          "anchor_positions": 96,
+          "student_tokens": 2822
+        },
+        {
+          "condition": "Interval 32",
+          "step": 177,
+          "kl": 0.1710620679257302,
+          "residual_student_mass": 1.8218289250912874e-06,
+          "completion_length_tokens": 122.4375,
+          "anchor_positions": 69,
+          "student_tokens": 1959
+        },
+        {
+          "condition": "Interval 32",
+          "step": 178,
+          "kl": 0.1467645108193217,
+          "residual_student_mass": 9.159429357686174e-07,
+          "completion_length_tokens": 204.3125,
+          "anchor_positions": 109,
+          "student_tokens": 3269
+        },
+        {
+          "condition": "Interval 32",
+          "step": 179,
+          "kl": 0.17152544441318907,
+          "residual_student_mass": 4.0928522745768227e-07,
+          "completion_length_tokens": 195.3125,
+          "anchor_positions": 105,
+          "student_tokens": 3125
+        },
+        {
+          "condition": "Interval 32",
+          "step": 180,
+          "kl": 0.2463550819928411,
+          "residual_student_mass": 2.504734510786078e-07,
+          "completion_length_tokens": 163.9375,
+          "anchor_positions": 89,
+          "student_tokens": 2623
+        },
+        {
+          "condition": "Interval 32",
+          "step": 181,
+          "kl": 0.1826063625680336,
+          "residual_student_mass": 1.8839983596015223e-06,
+          "completion_length_tokens": 185.25,
+          "anchor_positions": 97,
+          "student_tokens": 2964
+        },
+        {
+          "condition": "Interval 32",
+          "step": 182,
+          "kl": 0.11248000292029384,
+          "residual_student_mass": 2.473887830677599e-06,
+          "completion_length_tokens": 185.0,
+          "anchor_positions": 101,
+          "student_tokens": 2960
+        },
+        {
+          "condition": "Interval 32",
+          "step": 183,
+          "kl": 0.48472722437283716,
+          "residual_student_mass": 2.376149209697595e-06,
+          "completion_length_tokens": 164.8125,
+          "anchor_positions": 89,
+          "student_tokens": 2637
+        },
+        {
+          "condition": "Interval 32",
+          "step": 184,
+          "kl": 0.02315540418336802,
+          "residual_student_mass": 1.2899512675271104e-07,
+          "completion_length_tokens": 120.75,
+          "anchor_positions": 67,
+          "student_tokens": 1932
+        },
+        {
+          "condition": "Interval 32",
+          "step": 185,
+          "kl": 0.19564805122240048,
+          "residual_student_mass": 2.7312508112267604e-06,
+          "completion_length_tokens": 142.75,
+          "anchor_positions": 79,
+          "student_tokens": 2284
+        },
+        {
+          "condition": "Interval 32",
+          "step": 186,
+          "kl": 0.12262445462781937,
+          "residual_student_mass": 2.5622256390460126e-07,
+          "completion_length_tokens": 135.125,
+          "anchor_positions": 77,
+          "student_tokens": 2162
+        },
+        {
+          "condition": "Interval 32",
+          "step": 187,
+          "kl": 0.19358244721395904,
+          "residual_student_mass": 1.229817354226414e-07,
+          "completion_length_tokens": 140.5625,
+          "anchor_positions": 79,
+          "student_tokens": 2249
+        },
+        {
+          "condition": "Interval 32",
+          "step": 188,
+          "kl": 0.2813869103571935,
+          "residual_student_mass": 3.2986913408551897e-06,
+          "completion_length_tokens": 127.125,
+          "anchor_positions": 70,
+          "student_tokens": 2034
+        },
+        {
+          "condition": "Interval 32",
+          "step": 189,
+          "kl": 0.14014991462364285,
+          "residual_student_mass": 9.615553749932183e-06,
+          "completion_length_tokens": 162.875,
+          "anchor_positions": 90,
+          "student_tokens": 2606
+        },
+        {
+          "condition": "Interval 32",
+          "step": 190,
+          "kl": 0.3738661898354661,
+          "residual_student_mass": 2.248259796493355e-05,
+          "completion_length_tokens": 162.0,
+          "anchor_positions": 87,
+          "student_tokens": 2592
+        },
+        {
+          "condition": "Interval 32",
+          "step": 191,
+          "kl": 0.2033504774777273,
+          "residual_student_mass": 1.3619318775747015e-05,
+          "completion_length_tokens": 160.625,
+          "anchor_positions": 87,
+          "student_tokens": 2570
+        },
+        {
+          "condition": "Interval 32",
+          "step": 192,
+          "kl": 0.21758755385103293,
+          "residual_student_mass": 8.5571024677541e-07,
+          "completion_length_tokens": 182.1875,
+          "anchor_positions": 101,
+          "student_tokens": 2915
+        },
+        {
+          "condition": "Interval 32",
+          "step": 193,
+          "kl": 0.2274181892849056,
+          "residual_student_mass": 0.000142522054175808,
+          "completion_length_tokens": 134.3125,
+          "anchor_positions": 73,
+          "student_tokens": 2149
+        },
+        {
+          "condition": "Interval 32",
+          "step": 194,
+          "kl": 0.17630597466165238,
+          "residual_student_mass": 1.3239681720733643e-05,
+          "completion_length_tokens": 144.8125,
+          "anchor_positions": 80,
+          "student_tokens": 2317
+        },
+        {
+          "condition": "Interval 32",
+          "step": 195,
+          "kl": 0.11775576730506278,
+          "residual_student_mass": 1.022020975748698e-06,
+          "completion_length_tokens": 137.8125,
+          "anchor_positions": 75,
+          "student_tokens": 2205
+        },
+        {
+          "condition": "Interval 32",
+          "step": 196,
+          "kl": 0.1658760498529056,
+          "residual_student_mass": 2.877465609846444e-07,
+          "completion_length_tokens": 162.5625,
+          "anchor_positions": 87,
+          "student_tokens": 2601
+        },
+        {
+          "condition": "Interval 32",
+          "step": 197,
+          "kl": 0.19203390209634585,
+          "residual_student_mass": 1.0600013117636404e-05,
+          "completion_length_tokens": 172.125,
+          "anchor_positions": 93,
+          "student_tokens": 2754
+        },
+        {
+          "condition": "Interval 32",
+          "step": 198,
+          "kl": 0.3330102971299138,
+          "residual_student_mass": 1.3063807006275982e-06,
+          "completion_length_tokens": 203.375,
+          "anchor_positions": 109,
+          "student_tokens": 3254
+        },
+        {
+          "condition": "Interval 32",
+          "step": 199,
+          "kl": 0.3019615172969476,
+          "residual_student_mass": 1.3886292775472005e-05,
+          "completion_length_tokens": 139.4375,
+          "anchor_positions": 75,
+          "student_tokens": 2231
+        },
+        {
+          "condition": "Interval 32",
+          "step": 200,
+          "kl": 0.19522585568552256,
+          "residual_student_mass": 4.446768498682714e-06,
+          "completion_length_tokens": 167.8125,
+          "anchor_positions": 91,
+          "student_tokens": 2685
+        },
+        {
+          "condition": "Interval 32",
+          "step": 201,
+          "kl": 0.3474911210828242,
+          "residual_student_mass": 3.148402486528669e-06,
+          "completion_length_tokens": 146.4375,
+          "anchor_positions": 84,
+          "student_tokens": 2343
+        },
+        {
+          "condition": "Interval 32",
+          "step": 202,
+          "kl": 0.25988764173589296,
+          "residual_student_mass": 5.2306710219964745e-06,
+          "completion_length_tokens": 146.625,
+          "anchor_positions": 82,
+          "student_tokens": 2346
+        },
+        {
+          "condition": "Interval 32",
+          "step": 203,
+          "kl": 0.6295900000624978,
+          "residual_student_mass": 6.150498109705308e-06,
+          "completion_length_tokens": 159.9375,
+          "anchor_positions": 85,
+          "student_tokens": 2559
+        },
+        {
+          "condition": "Interval 32",
+          "step": 204,
+          "kl": 0.11248422906498289,
+          "residual_student_mass": 1.7180162317612592e-07,
+          "completion_length_tokens": 156.375,
+          "anchor_positions": 85,
+          "student_tokens": 2502
+        },
+        {
+          "condition": "Interval 32",
+          "step": 205,
+          "kl": 0.27326208960386794,
+          "residual_student_mass": 2.384185791015625e-07,
+          "completion_length_tokens": 130.3125,
+          "anchor_positions": 72,
+          "student_tokens": 2085
+        },
+        {
+          "condition": "Interval 32",
+          "step": 206,
+          "kl": 0.27530794130603015,
+          "residual_student_mass": 1.9618022589035977e-06,
+          "completion_length_tokens": 147.9375,
+          "anchor_positions": 81,
+          "student_tokens": 2367
+        },
+        {
+          "condition": "Interval 32",
+          "step": 207,
+          "kl": 0.2656834526159665,
+          "residual_student_mass": 3.732740879058838e-07,
+          "completion_length_tokens": 145.5625,
+          "anchor_positions": 80,
+          "student_tokens": 2329
+        },
+        {
+          "condition": "Interval 32",
+          "step": 208,
+          "kl": 0.28463985671594133,
+          "residual_student_mass": 3.1364899055630555e-05,
+          "completion_length_tokens": 191.4375,
+          "anchor_positions": 102,
+          "student_tokens": 3063
+        },
+        {
+          "condition": "Interval 32",
+          "step": 209,
+          "kl": 0.1220820684366706,
+          "residual_student_mass": 2.956938469546965e-06,
+          "completion_length_tokens": 158.4375,
+          "anchor_positions": 87,
+          "student_tokens": 2535
+        },
+        {
+          "condition": "Interval 32",
+          "step": 210,
+          "kl": 0.34142500445469576,
+          "residual_student_mass": 2.859513970870006e-07,
+          "completion_length_tokens": 143.4375,
+          "anchor_positions": 79,
+          "student_tokens": 2295
+        },
+        {
+          "condition": "Interval 32",
+          "step": 211,
+          "kl": 0.20523663961488656,
+          "residual_student_mass": 1.0673389878383903e-06,
+          "completion_length_tokens": 155.625,
+          "anchor_positions": 86,
+          "student_tokens": 2490
+        },
+        {
+          "condition": "Interval 32",
+          "step": 212,
+          "kl": 0.3799774608937905,
+          "residual_student_mass": 5.859954684388404e-06,
+          "completion_length_tokens": 194.375,
+          "anchor_positions": 102,
+          "student_tokens": 3110
+        },
+        {
+          "condition": "Interval 32",
+          "step": 213,
+          "kl": 0.14585857847683087,
+          "residual_student_mass": 0.00011510421068240434,
+          "completion_length_tokens": 144.75,
+          "anchor_positions": 78,
+          "student_tokens": 2316
+        },
+        {
+          "condition": "Interval 32",
+          "step": 214,
+          "kl": 0.2320651897156319,
+          "residual_student_mass": 7.614653597595871e-06,
+          "completion_length_tokens": 171.3125,
+          "anchor_positions": 93,
+          "student_tokens": 2741
+        },
+        {
+          "condition": "Interval 32",
+          "step": 215,
+          "kl": 0.23043936242778543,
+          "residual_student_mass": 3.0615112998268823e-07,
+          "completion_length_tokens": 160.875,
+          "anchor_positions": 88,
+          "student_tokens": 2574
+        },
+        {
+          "condition": "Interval 32",
+          "step": 216,
+          "kl": 0.1530258725942155,
+          "residual_student_mass": 4.089022257241858e-06,
+          "completion_length_tokens": 151.125,
+          "anchor_positions": 83,
+          "student_tokens": 2418
+        },
+        {
+          "condition": "Interval 32",
+          "step": 217,
+          "kl": 0.21726056993061163,
+          "residual_student_mass": 8.250155100008337e-07,
+          "completion_length_tokens": 153.5625,
+          "anchor_positions": 82,
+          "student_tokens": 2457
+        },
+        {
+          "condition": "Interval 32",
+          "step": 218,
+          "kl": 0.14582124892226367,
+          "residual_student_mass": 3.2993351540914395e-06,
+          "completion_length_tokens": 149.0,
+          "anchor_positions": 82,
+          "student_tokens": 2384
+        },
+        {
+          "condition": "Interval 32",
+          "step": 219,
+          "kl": 0.1521897747265721,
+          "residual_student_mass": 7.183928238718133e-07,
+          "completion_length_tokens": 172.25,
+          "anchor_positions": 95,
+          "student_tokens": 2756
+        },
+        {
+          "condition": "Interval 32",
+          "step": 220,
+          "kl": 0.2742064248241668,
+          "residual_student_mass": 4.1020077628058357e-05,
+          "completion_length_tokens": 134.4375,
+          "anchor_positions": 74,
+          "student_tokens": 2151
+        },
+        {
+          "condition": "Interval 32",
+          "step": 221,
+          "kl": 0.37983355988693857,
+          "residual_student_mass": 2.7435606923596613e-05,
+          "completion_length_tokens": 216.8125,
+          "anchor_positions": 116,
+          "student_tokens": 3469
+        },
+        {
+          "condition": "Interval 32",
+          "step": 222,
+          "kl": 0.1959843904549397,
+          "residual_student_mass": 3.3990756885425464e-07,
+          "completion_length_tokens": 135.8125,
+          "anchor_positions": 74,
+          "student_tokens": 2173
+        },
+        {
+          "condition": "Interval 32",
+          "step": 223,
+          "kl": 0.5040418214263443,
+          "residual_student_mass": 0.00010447104771931966,
+          "completion_length_tokens": 195.8125,
+          "anchor_positions": 105,
+          "student_tokens": 3133
+        },
+        {
+          "condition": "Interval 32",
+          "step": 224,
+          "kl": 0.30688095299089196,
+          "residual_student_mass": 4.314563491127708e-06,
+          "completion_length_tokens": 164.6875,
+          "anchor_positions": 88,
+          "student_tokens": 2635
+        },
+        {
+          "condition": "Interval 32",
+          "step": 225,
+          "kl": 0.18294381645098054,
+          "residual_student_mass": 1.7685134236405536e-06,
+          "completion_length_tokens": 153.6875,
+          "anchor_positions": 82,
+          "student_tokens": 2459
+        },
+        {
+          "condition": "Interval 32",
+          "step": 226,
+          "kl": 0.12535196427433776,
+          "residual_student_mass": 3.4677982330322265e-06,
+          "completion_length_tokens": 183.6875,
+          "anchor_positions": 100,
+          "student_tokens": 2939
+        },
+        {
+          "condition": "Interval 32",
+          "step": 227,
+          "kl": 0.24765932319316497,
+          "residual_student_mass": 2.7865171432495116e-07,
+          "completion_length_tokens": 147.125,
+          "anchor_positions": 80,
+          "student_tokens": 2354
+        },
+        {
+          "condition": "Interval 32",
+          "step": 228,
+          "kl": 0.3668487665769464,
+          "residual_student_mass": 1.5509243194873517e-05,
+          "completion_length_tokens": 200.125,
+          "anchor_positions": 104,
+          "student_tokens": 3202
+        },
+        {
+          "condition": "Interval 32",
+          "step": 229,
+          "kl": 0.13595025467607752,
+          "residual_student_mass": 3.0688337377599765e-07,
+          "completion_length_tokens": 134.5625,
+          "anchor_positions": 74,
+          "student_tokens": 2153
+        },
+        {
+          "condition": "Interval 32",
+          "step": 230,
+          "kl": 0.09368221224927717,
+          "residual_student_mass": 3.0808634572214893e-07,
+          "completion_length_tokens": 139.125,
+          "anchor_positions": 77,
+          "student_tokens": 2226
+        },
+        {
+          "condition": "Interval 32",
+          "step": 231,
+          "kl": 0.4437193166496646,
+          "residual_student_mass": 2.6406125819429437e-05,
+          "completion_length_tokens": 175.9375,
+          "anchor_positions": 94,
+          "student_tokens": 2815
+        },
+        {
+          "condition": "Interval 32",
+          "step": 232,
+          "kl": 0.5066936685150929,
+          "residual_student_mass": 7.962448555126525e-06,
+          "completion_length_tokens": 218.0,
+          "anchor_positions": 114,
+          "student_tokens": 3488
+        },
+        {
+          "condition": "Interval 32",
+          "step": 233,
+          "kl": 0.16770978439071213,
+          "residual_student_mass": 3.5757256537368615e-05,
+          "completion_length_tokens": 180.625,
+          "anchor_positions": 97,
+          "student_tokens": 2890
+        },
+        {
+          "condition": "Interval 32",
+          "step": 234,
+          "kl": 0.1591308189428832,
+          "residual_student_mass": 2.6608768262361226e-05,
+          "completion_length_tokens": 172.125,
+          "anchor_positions": 95,
+          "student_tokens": 2754
+        },
+        {
+          "condition": "Interval 32",
+          "step": 235,
+          "kl": 0.18461301280233128,
+          "residual_student_mass": 1.8460079304222923e-06,
+          "completion_length_tokens": 191.75,
+          "anchor_positions": 103,
+          "student_tokens": 3068
+        },
+        {
+          "condition": "Interval 32",
+          "step": 236,
+          "kl": 0.12041983812354388,
+          "residual_student_mass": 2.639368176460266e-06,
+          "completion_length_tokens": 174.5,
+          "anchor_positions": 96,
+          "student_tokens": 2792
+        },
+        {
+          "condition": "Interval 32",
+          "step": 237,
+          "kl": 0.36444952829102073,
+          "residual_student_mass": 3.2064426376158932e-06,
+          "completion_length_tokens": 152.6875,
+          "anchor_positions": 83,
+          "student_tokens": 2443
+        },
+        {
+          "condition": "Interval 32",
+          "step": 238,
+          "kl": 0.19995749048200476,
+          "residual_student_mass": 2.209144302561313e-06,
+          "completion_length_tokens": 146.6875,
+          "anchor_positions": 79,
+          "student_tokens": 2347
+        },
+        {
+          "condition": "Interval 32",
+          "step": 239,
+          "kl": 0.2760199647439359,
+          "residual_student_mass": 6.582749926525614e-05,
+          "completion_length_tokens": 166.875,
+          "anchor_positions": 92,
+          "student_tokens": 2670
+        },
+        {
+          "condition": "Interval 32",
+          "step": 240,
+          "kl": 0.24040527846487983,
+          "residual_student_mass": 2.3727997755393004e-05,
+          "completion_length_tokens": 147.6875,
+          "anchor_positions": 78,
+          "student_tokens": 2363
+        },
+        {
+          "condition": "Interval 32",
+          "step": 241,
+          "kl": 0.2680384525231824,
+          "residual_student_mass": 5.255404271577534e-06,
+          "completion_length_tokens": 138.0,
+          "anchor_positions": 76,
+          "student_tokens": 2208
+        },
+        {
+          "condition": "Interval 32",
+          "step": 242,
+          "kl": 0.33060933758154915,
+          "residual_student_mass": 5.129505606258618e-06,
+          "completion_length_tokens": 157.75,
+          "anchor_positions": 85,
+          "student_tokens": 2524
+        },
+        {
+          "condition": "Interval 32",
+          "step": 243,
+          "kl": 0.4151776795279241,
+          "residual_student_mass": 6.924555139634216e-06,
+          "completion_length_tokens": 195.75,
+          "anchor_positions": 103,
+          "student_tokens": 3132
+        },
+        {
+          "condition": "Interval 32",
+          "step": 244,
+          "kl": 0.13465465728033985,
+          "residual_student_mass": 2.671690548167509e-07,
+          "completion_length_tokens": 156.5,
+          "anchor_positions": 85,
+          "student_tokens": 2504
+        },
+        {
+          "condition": "Interval 32",
+          "step": 245,
+          "kl": 0.22679984893692345,
+          "residual_student_mass": 9.18771802764578e-06,
+          "completion_length_tokens": 173.8125,
+          "anchor_positions": 97,
+          "student_tokens": 2781
+        },
+        {
+          "condition": "Interval 32",
+          "step": 246,
+          "kl": 0.13276296414575112,
+          "residual_student_mass": 2.0626344178852283e-07,
+          "completion_length_tokens": 129.875,
+          "anchor_positions": 76,
+          "student_tokens": 2078
+        },
+        {
+          "condition": "Interval 32",
+          "step": 247,
+          "kl": 0.007682113217416431,
+          "residual_student_mass": 2.674758434295654e-07,
+          "completion_length_tokens": 147.75,
+          "anchor_positions": 80,
+          "student_tokens": 2364
+        },
+        {
+          "condition": "Interval 32",
+          "step": 248,
+          "kl": 0.2711346130471972,
+          "residual_student_mass": 2.597514973130337e-05,
+          "completion_length_tokens": 156.1875,
+          "anchor_positions": 86,
+          "student_tokens": 2499
+        },
+        {
+          "condition": "Interval 32",
+          "step": 249,
+          "kl": 0.29630897581349686,
+          "residual_student_mass": 3.459976940620236e-07,
+          "completion_length_tokens": 153.1875,
+          "anchor_positions": 82,
+          "student_tokens": 2451
+        },
+        {
+          "condition": "Interval 32",
+          "step": 250,
+          "kl": 0.33928381541852165,
+          "residual_student_mass": 2.201759453975793e-06,
+          "completion_length_tokens": 185.125,
+          "anchor_positions": 99,
+          "student_tokens": 2962
+        },
+        {
+          "condition": "Interval 32",
+          "step": 251,
+          "kl": 0.19948106107892138,
+          "residual_student_mass": 1.0109567022942877e-05,
+          "completion_length_tokens": 142.75,
+          "anchor_positions": 77,
+          "student_tokens": 2284
+        },
+        {
+          "condition": "Interval 32",
+          "step": 252,
+          "kl": 0.11218465612074971,
+          "residual_student_mass": 2.411104017688382e-06,
+          "completion_length_tokens": 172.0,
+          "anchor_positions": 93,
+          "student_tokens": 2752
+        },
+        {
+          "condition": "Interval 32",
+          "step": 253,
+          "kl": 0.21554566907080672,
+          "residual_student_mass": 1.6638027724399362e-06,
+          "completion_length_tokens": 175.0,
+          "anchor_positions": 93,
+          "student_tokens": 2800
+        },
+        {
+          "condition": "Interval 32",
+          "step": 254,
+          "kl": 0.21112374780746238,
+          "residual_student_mass": 2.933175940262644e-07,
+          "completion_length_tokens": 140.5625,
+          "anchor_positions": 76,
+          "student_tokens": 2249
+        },
+        {
+          "condition": "Interval 32",
+          "step": 255,
+          "kl": 0.3147492658693358,
+          "residual_student_mass": 1.5274802250648613e-06,
+          "completion_length_tokens": 120.1875,
+          "anchor_positions": 67,
+          "student_tokens": 1923
+        },
+        {
+          "condition": "Interval 32",
+          "step": 256,
+          "kl": 0.30868581258042355,
+          "residual_student_mass": 1.2006078447614397e-06,
+          "completion_length_tokens": 127.0625,
+          "anchor_positions": 70,
+          "student_tokens": 2033
+        },
+        {
+          "condition": "Interval 32",
+          "step": 257,
+          "kl": 0.15266466185318872,
+          "residual_student_mass": 3.8574601328650184e-05,
+          "completion_length_tokens": 155.3125,
+          "anchor_positions": 86,
+          "student_tokens": 2485
+        },
+        {
+          "condition": "Interval 32",
+          "step": 258,
+          "kl": 0.2148694141807126,
+          "residual_student_mass": 2.9467749145795715e-05,
+          "completion_length_tokens": 199.4375,
+          "anchor_positions": 106,
+          "student_tokens": 3191
+        },
+        {
+          "condition": "Interval 32",
+          "step": 259,
+          "kl": 0.07887011998230624,
+          "residual_student_mass": 5.654162830776638e-07,
+          "completion_length_tokens": 126.5,
+          "anchor_positions": 72,
+          "student_tokens": 2024
+        },
+        {
+          "condition": "Interval 32",
+          "step": 260,
+          "kl": 0.09131576357872523,
+          "residual_student_mass": 2.543593561926553e-07,
+          "completion_length_tokens": 156.0,
+          "anchor_positions": 86,
+          "student_tokens": 2496
+        },
+        {
+          "condition": "Interval 32",
+          "step": 261,
+          "kl": 0.25425075171399414,
+          "residual_student_mass": 4.248372439680429e-06,
+          "completion_length_tokens": 161.3125,
+          "anchor_positions": 87,
+          "student_tokens": 2581
+        },
+        {
+          "condition": "Interval 32",
+          "step": 262,
+          "kl": 0.23159157112436168,
+          "residual_student_mass": 4.718598631239428e-06,
+          "completion_length_tokens": 181.1875,
+          "anchor_positions": 97,
+          "student_tokens": 2899
+        },
+        {
+          "condition": "Interval 32",
+          "step": 263,
+          "kl": 0.19125718226243124,
+          "residual_student_mass": 6.820737701101402e-06,
+          "completion_length_tokens": 178.0625,
+          "anchor_positions": 97,
+          "student_tokens": 2849
+        },
+        {
+          "condition": "Interval 32",
+          "step": 264,
+          "kl": 0.15317637032782827,
+          "residual_student_mass": 9.150006050287291e-06,
+          "completion_length_tokens": 157.8125,
+          "anchor_positions": 86,
+          "student_tokens": 2525
+        },
+        {
+          "condition": "Interval 32",
+          "step": 265,
+          "kl": 0.3033688899342031,
+          "residual_student_mass": 2.3152568552753713e-05,
+          "completion_length_tokens": 190.9375,
+          "anchor_positions": 101,
+          "student_tokens": 3055
+        },
+        {
+          "condition": "Interval 32",
+          "step": 266,
+          "kl": 0.12433206056360993,
+          "residual_student_mass": 1.6824884729070977e-05,
+          "completion_length_tokens": 169.875,
+          "anchor_positions": 91,
+          "student_tokens": 2718
+        },
+        {
+          "condition": "Interval 32",
+          "step": 267,
+          "kl": 0.30932525936668975,
+          "residual_student_mass": 3.246929910447862e-05,
+          "completion_length_tokens": 168.25,
+          "anchor_positions": 90,
+          "student_tokens": 2692
+        },
+        {
+          "condition": "Interval 32",
+          "step": 268,
+          "kl": 0.21306107545944014,
+          "residual_student_mass": 2.672274907430013e-07,
+          "completion_length_tokens": 103.0625,
+          "anchor_positions": 60,
+          "student_tokens": 1649
+        },
+        {
+          "condition": "Interval 32",
+          "step": 269,
+          "kl": 0.1875213686358831,
+          "residual_student_mass": 2.693246912073206e-07,
+          "completion_length_tokens": 144.5625,
+          "anchor_positions": 81,
+          "student_tokens": 2313
+        },
+        {
+          "condition": "Interval 32",
+          "step": 270,
+          "kl": 0.1491279514426531,
+          "residual_student_mass": 2.7006055101936247e-05,
+          "completion_length_tokens": 151.875,
+          "anchor_positions": 81,
+          "student_tokens": 2430
+        },
+        {
+          "condition": "Interval 32",
+          "step": 271,
+          "kl": 0.23080531674116306,
+          "residual_student_mass": 5.2532044852652204e-06,
+          "completion_length_tokens": 149.8125,
+          "anchor_positions": 82,
+          "student_tokens": 2397
+        },
+        {
+          "condition": "Interval 32",
+          "step": 272,
+          "kl": 0.17018029191154999,
+          "residual_student_mass": 8.706748485565185e-06,
+          "completion_length_tokens": 140.125,
+          "anchor_positions": 80,
+          "student_tokens": 2242
+        },
+        {
+          "condition": "Interval 32",
+          "step": 273,
+          "kl": 0.13151857433957315,
+          "residual_student_mass": 5.885627534654405e-06,
+          "completion_length_tokens": 165.3125,
+          "anchor_positions": 90,
+          "student_tokens": 2645
+        },
+        {
+          "condition": "Interval 32",
+          "step": 274,
+          "kl": 0.09503567378612533,
+          "residual_student_mass": 7.408005850655692e-07,
+          "completion_length_tokens": 152.75,
+          "anchor_positions": 84,
+          "student_tokens": 2444
+        },
+        {
+          "condition": "Interval 32",
+          "step": 275,
+          "kl": 0.4379712454774977,
+          "residual_student_mass": 2.321808837180914e-06,
+          "completion_length_tokens": 160.375,
+          "anchor_positions": 86,
+          "student_tokens": 2566
+        },
+        {
+          "condition": "Interval 32",
+          "step": 276,
+          "kl": 0.1308039047258491,
+          "residual_student_mass": 4.646452990445224e-07,
+          "completion_length_tokens": 161.875,
+          "anchor_positions": 88,
+          "student_tokens": 2590
+        },
+        {
+          "condition": "Interval 32",
+          "step": 277,
+          "kl": 0.18644611149020018,
+          "residual_student_mass": 6.4233516124968835e-06,
+          "completion_length_tokens": 173.375,
+          "anchor_positions": 94,
+          "student_tokens": 2774
+        },
+        {
+          "condition": "Interval 32",
+          "step": 278,
+          "kl": 0.12043752314562702,
+          "residual_student_mass": 4.298661066138226e-06,
+          "completion_length_tokens": 166.625,
+          "anchor_positions": 92,
+          "student_tokens": 2666
+        },
+        {
+          "condition": "Interval 32",
+          "step": 279,
+          "kl": 0.30226653441613066,
+          "residual_student_mass": 3.6103384835379463e-06,
+          "completion_length_tokens": 157.4375,
+          "anchor_positions": 84,
+          "student_tokens": 2519
+        },
+        {
+          "condition": "Interval 32",
+          "step": 280,
+          "kl": 0.327164385603275,
+          "residual_student_mass": 2.7020772298177085e-06,
+          "completion_length_tokens": 164.0,
+          "anchor_positions": 90,
+          "student_tokens": 2624
+        },
+        {
+          "condition": "Interval 32",
+          "step": 281,
+          "kl": 0.2504834320649121,
+          "residual_student_mass": 2.373493823808493e-05,
+          "completion_length_tokens": 181.1875,
+          "anchor_positions": 97,
+          "student_tokens": 2899
+        },
+        {
+          "condition": "Interval 32",
+          "step": 282,
+          "kl": 0.338679755108691,
+          "residual_student_mass": 5.5655837059021e-06,
+          "completion_length_tokens": 163.0625,
+          "anchor_positions": 88,
+          "student_tokens": 2609
+        },
+        {
+          "condition": "Interval 32",
+          "step": 283,
+          "kl": 0.22083113853134534,
+          "residual_student_mass": 1.1514411883407764e-05,
+          "completion_length_tokens": 168.3125,
+          "anchor_positions": 89,
+          "student_tokens": 2693
+        },
+        {
+          "condition": "Interval 32",
+          "step": 284,
+          "kl": 0.10768021851410378,
+          "residual_student_mass": 1.3466234560366027e-06,
+          "completion_length_tokens": 147.9375,
+          "anchor_positions": 81,
+          "student_tokens": 2367
+        },
+        {
+          "condition": "Interval 32",
+          "step": 285,
+          "kl": 0.3593380905364825,
+          "residual_student_mass": 3.0748622933613886e-06,
+          "completion_length_tokens": 182.5625,
+          "anchor_positions": 97,
+          "student_tokens": 2921
+        },
+        {
+          "condition": "Interval 32",
+          "step": 286,
+          "kl": 0.4544376115131599,
+          "residual_student_mass": 0.0001993130993198704,
+          "completion_length_tokens": 210.25,
+          "anchor_positions": 111,
+          "student_tokens": 3364
+        },
+        {
+          "condition": "Interval 32",
+          "step": 287,
+          "kl": 0.25639022391539784,
+          "residual_student_mass": 1.4621764421463013e-06,
+          "completion_length_tokens": 172.1875,
+          "anchor_positions": 96,
+          "student_tokens": 2755
+        },
+        {
+          "condition": "Interval 32",
+          "step": 288,
+          "kl": 0.26790427547516943,
+          "residual_student_mass": 3.1087643060928735e-05,
+          "completion_length_tokens": 141.5,
+          "anchor_positions": 78,
+          "student_tokens": 2264
+        },
+        {
+          "condition": "Interval 32",
+          "step": 289,
+          "kl": 0.185936090189423,
+          "residual_student_mass": 4.0612808645588076e-06,
+          "completion_length_tokens": 133.125,
+          "anchor_positions": 73,
+          "student_tokens": 2130
+        },
+        {
+          "condition": "Interval 32",
+          "step": 290,
+          "kl": 0.05135140612971421,
+          "residual_student_mass": 3.9306846824852197e-07,
+          "completion_length_tokens": 134.0625,
+          "anchor_positions": 74,
+          "student_tokens": 2145
+        },
+        {
+          "condition": "Interval 32",
+          "step": 291,
+          "kl": 0.34672836526835826,
+          "residual_student_mass": 3.1950709583995107e-06,
+          "completion_length_tokens": 164.3125,
+          "anchor_positions": 91,
+          "student_tokens": 2629
+        },
+        {
+          "condition": "Interval 32",
+          "step": 292,
+          "kl": 0.23473019232481437,
+          "residual_student_mass": 5.187784753194669e-06,
+          "completion_length_tokens": 150.5625,
+          "anchor_positions": 82,
+          "student_tokens": 2409
+        },
+        {
+          "condition": "Interval 32",
+          "step": 293,
+          "kl": 0.14945572339308102,
+          "residual_student_mass": 8.434245460911801e-05,
+          "completion_length_tokens": 171.4375,
+          "anchor_positions": 95,
+          "student_tokens": 2743
+        },
+        {
+          "condition": "Interval 32",
+          "step": 294,
+          "kl": 0.193913583465876,
+          "residual_student_mass": 2.7318795522054035e-07,
+          "completion_length_tokens": 130.9375,
+          "anchor_positions": 72,
+          "student_tokens": 2095
+        },
+        {
+          "condition": "Interval 32",
+          "step": 295,
+          "kl": 0.35054370048775474,
+          "residual_student_mass": 3.1308461261051955e-06,
+          "completion_length_tokens": 172.6875,
+          "anchor_positions": 93,
+          "student_tokens": 2763
+        },
+        {
+          "condition": "Interval 32",
+          "step": 296,
+          "kl": 0.3337084248341487,
+          "residual_student_mass": 3.556410471598307e-06,
+          "completion_length_tokens": 145.875,
+          "anchor_positions": 81,
+          "student_tokens": 2334
+        },
+        {
+          "condition": "Interval 32",
+          "step": 297,
+          "kl": 0.43678951132545296,
+          "residual_student_mass": 1.1845604403988346e-05,
+          "completion_length_tokens": 169.75,
+          "anchor_positions": 91,
+          "student_tokens": 2716
+        },
+        {
+          "condition": "Interval 32",
+          "step": 298,
+          "kl": 0.3227985233623864,
+          "residual_student_mass": 2.776367076929065e-06,
+          "completion_length_tokens": 123.9375,
+          "anchor_positions": 69,
+          "student_tokens": 1983
+        },
+        {
+          "condition": "Interval 32",
+          "step": 299,
+          "kl": 0.20300845774328083,
+          "residual_student_mass": 5.702411427217371e-06,
+          "completion_length_tokens": 155.25,
+          "anchor_positions": 85,
+          "student_tokens": 2484
+        },
+        {
+          "condition": "Interval 128",
+          "step": 0,
+          "kl": 0.20784158913568263,
+          "residual_student_mass": 0.0,
+          "completion_length_tokens": 64.0,
+          "anchor_positions": 4,
+          "student_tokens": 256
+        },
+        {
+          "condition": "Interval 128",
+          "step": 1,
+          "kl": 0.2841955713886364,
+          "residual_student_mass": 4.76837158203125e-07,
+          "completion_length_tokens": 42.25,
+          "anchor_positions": 4,
+          "student_tokens": 169
+        },
+        {
+          "condition": "Interval 128",
+          "step": 2,
+          "kl": 0.004020037886618866,
+          "residual_student_mass": 3.427267074584961e-07,
+          "completion_length_tokens": 48.5,
+          "anchor_positions": 4,
+          "student_tokens": 194
+        },
+        {
+          "condition": "Interval 128",
+          "step": 3,
+          "kl": 5.4200118881908566e-06,
+          "residual_student_mass": 1.4901161193847656e-08,
+          "completion_length_tokens": 64.0,
+          "anchor_positions": 4,
+          "student_tokens": 256
+        },
+        {
+          "condition": "Interval 128",
+          "step": 4,
+          "kl": 0.08825005264156971,
+          "residual_student_mass": 7.450580596923828e-08,
+          "completion_length_tokens": 59.75,
+          "anchor_positions": 4,
+          "student_tokens": 239
+        },
+        {
+          "condition": "Interval 128",
+          "step": 5,
+          "kl": 0.45205779998212847,
+          "residual_student_mass": 1.6391277313232422e-07,
+          "completion_length_tokens": 53.75,
+          "anchor_positions": 4,
+          "student_tokens": 215
+        },
+        {
+          "condition": "Interval 128",
+          "step": 6,
+          "kl": 1.0271704823851664,
+          "residual_student_mass": 8.940696716308594e-08,
+          "completion_length_tokens": 55.5,
+          "anchor_positions": 4,
+          "student_tokens": 222
+        },
+        {
+          "condition": "Interval 128",
+          "step": 7,
+          "kl": 0.18432341137448205,
+          "residual_student_mass": 1.4901161193847656e-07,
+          "completion_length_tokens": 58.25,
+          "anchor_positions": 4,
+          "student_tokens": 233
+        },
+        {
+          "condition": "Interval 128",
+          "step": 8,
+          "kl": 5.0888051816855295e-06,
+          "residual_student_mass": 2.384185791015625e-07,
+          "completion_length_tokens": 46.0,
+          "anchor_positions": 4,
+          "student_tokens": 184
+        },
+        {
+          "condition": "Interval 128",
+          "step": 9,
+          "kl": 9.479136792833742e-06,
+          "residual_student_mass": 1.1920928955078125e-07,
+          "completion_length_tokens": 55.0,
+          "anchor_positions": 4,
+          "student_tokens": 220
+        },
+        {
+          "condition": "Interval 128",
+          "step": 10,
+          "kl": 0.16652236265343845,
+          "residual_student_mass": 1.9371509552001953e-07,
+          "completion_length_tokens": 58.75,
+          "anchor_positions": 4,
+          "student_tokens": 235
+        },
+        {
+          "condition": "Interval 128",
+          "step": 11,
+          "kl": 9.173513560511992e-05,
+          "residual_student_mass": 8.940696716308594e-08,
+          "completion_length_tokens": 61.0,
+          "anchor_positions": 4,
+          "student_tokens": 244
+        },
+        {
+          "condition": "Interval 128",
+          "step": 12,
+          "kl": 0.048785239083315446,
+          "residual_student_mass": 1.043081283569336e-07,
+          "completion_length_tokens": 57.5,
+          "anchor_positions": 4,
+          "student_tokens": 230
+        },
+        {
+          "condition": "Interval 128",
+          "step": 13,
+          "kl": 4.2222109115641615e-06,
+          "residual_student_mass": 0.0,
+          "completion_length_tokens": 64.0,
+          "anchor_positions": 4,
+          "student_tokens": 256
+        },
+        {
+          "condition": "Interval 128",
+          "step": 14,
+          "kl": 0.27170567187743444,
+          "residual_student_mass": 3.8489699363708496e-05,
+          "completion_length_tokens": 56.0,
+          "anchor_positions": 4,
+          "student_tokens": 224
+        },
+        {
+          "condition": "Interval 128",
+          "step": 15,
+          "kl": 0.06461472438573423,
+          "residual_student_mass": 1.4901161193847656e-08,
+          "completion_length_tokens": 64.0,
+          "anchor_positions": 4,
+          "student_tokens": 256
+        },
+        {
+          "condition": "Interval 128",
+          "step": 16,
+          "kl": 0.7247745599354403,
+          "residual_student_mass": -2.9802322387695312e-08,
+          "completion_length_tokens": 64.0,
+          "anchor_positions": 4,
+          "student_tokens": 256
+        },
+        {
+          "condition": "Interval 128",
+          "step": 17,
+          "kl": 0.1331266529735302,
+          "residual_student_mass": 1.043081283569336e-07,
+          "completion_length_tokens": 61.75,
+          "anchor_positions": 4,
+          "student_tokens": 247
+        },
+        {
+          "condition": "Interval 128",
+          "step": 18,
+          "kl": 0.003176245196215177,
+          "residual_student_mass": 7.450580596923828e-08,
+          "completion_length_tokens": 59.75,
+          "anchor_positions": 4,
+          "student_tokens": 239
+        },
+        {
+          "condition": "Interval 128",
+          "step": 19,
+          "kl": 0.0009036774703190531,
+          "residual_student_mass": 1.1920928955078125e-07,
+          "completion_length_tokens": 63.75,
+          "anchor_positions": 4,
+          "student_tokens": 255
+        },
+        {
+          "condition": "Final only",
+          "step": 0,
+          "kl": 0.20784158913568263,
+          "residual_student_mass": 0.0,
+          "completion_length_tokens": 64.0,
+          "anchor_positions": 4,
+          "student_tokens": 256
+        },
+        {
+          "condition": "Final only",
+          "step": 1,
+          "kl": 0.2841929936955694,
+          "residual_student_mass": 5.662441253662109e-07,
+          "completion_length_tokens": 42.25,
+          "anchor_positions": 4,
+          "student_tokens": 169
+        },
+        {
+          "condition": "Final only",
+          "step": 2,
+          "kl": 0.004020281001885451,
+          "residual_student_mass": 3.427267074584961e-07,
+          "completion_length_tokens": 48.5,
+          "anchor_positions": 4,
+          "student_tokens": 194
+        },
+        {
+          "condition": "Final only",
+          "step": 3,
+          "kl": 6.584381111451876e-06,
+          "residual_student_mass": 0.0,
+          "completion_length_tokens": 64.0,
+          "anchor_positions": 4,
+          "student_tokens": 256
+        },
+        {
+          "condition": "Final only",
+          "step": 4,
+          "kl": 0.0018552053734310903,
+          "residual_student_mass": 4.470348358154297e-08,
+          "completion_length_tokens": 59.75,
+          "anchor_positions": 4,
+          "student_tokens": 239
+        },
+        {
+          "condition": "Final only",
+          "step": 5,
+          "kl": 0.012665449191715084,
+          "residual_student_mass": 1.6391277313232422e-07,
+          "completion_length_tokens": 53.75,
+          "anchor_positions": 4,
+          "student_tokens": 215
+        },
+        {
+          "condition": "Final only",
+          "step": 6,
+          "kl": 0.0012390888751951934,
+          "residual_student_mass": 0.0,
+          "completion_length_tokens": 55.5,
+          "anchor_positions": 4,
+          "student_tokens": 222
+        },
+        {
+          "condition": "Final only",
+          "step": 7,
+          "kl": 0.5415871203549045,
+          "residual_student_mass": 2.2351741790771484e-07,
+          "completion_length_tokens": 51.75,
+          "anchor_positions": 4,
+          "student_tokens": 207
+        },
+        {
+          "condition": "Final only",
+          "step": 8,
+          "kl": 0.013479401642086941,
+          "residual_student_mass": 3.129243850708008e-07,
+          "completion_length_tokens": 46.0,
+          "anchor_positions": 4,
+          "student_tokens": 184
+        },
+        {
+          "condition": "Final only",
+          "step": 9,
+          "kl": 6.660177326978101e-06,
+          "residual_student_mass": 1.1920928955078125e-07,
+          "completion_length_tokens": 55.0,
+          "anchor_positions": 4,
+          "student_tokens": 220
+        },
+        {
+          "condition": "Final only",
+          "step": 10,
+          "kl": 0.0002983095278068504,
+          "residual_student_mass": 1.7881393432617188e-07,
+          "completion_length_tokens": 46.25,
+          "anchor_positions": 4,
+          "student_tokens": 185
+        },
+        {
+          "condition": "Final only",
+          "step": 11,
+          "kl": 2.8879920023427985e-05,
+          "residual_student_mass": 1.043081283569336e-07,
+          "completion_length_tokens": 44.5,
+          "anchor_positions": 4,
+          "student_tokens": 178
+        },
+        {
+          "condition": "Final only",
+          "step": 12,
+          "kl": 8.88886086158891e-05,
+          "residual_student_mass": 3.8743019104003906e-07,
+          "completion_length_tokens": 43.75,
+          "anchor_positions": 4,
+          "student_tokens": 175
+        },
+        {
+          "condition": "Final only",
+          "step": 13,
+          "kl": 0.4011429012951453,
+          "residual_student_mass": 8.940696716308594e-08,
+          "completion_length_tokens": 56.25,
+          "anchor_positions": 4,
+          "student_tokens": 225
+        },
+        {
+          "condition": "Final only",
+          "step": 14,
+          "kl": 0.039965243070469114,
+          "residual_student_mass": 2.384185791015625e-07,
+          "completion_length_tokens": 48.75,
+          "anchor_positions": 4,
+          "student_tokens": 195
+        },
+        {
+          "condition": "Final only",
+          "step": 15,
+          "kl": 0.07149674971111608,
+          "residual_student_mass": 1.341104507446289e-07,
+          "completion_length_tokens": 43.25,
+          "anchor_positions": 4,
+          "student_tokens": 173
+        },
+        {
+          "condition": "Final only",
+          "step": 16,
+          "kl": 7.127632990489019e-06,
+          "residual_student_mass": 7.450580596923828e-08,
+          "completion_length_tokens": 61.75,
+          "anchor_positions": 4,
+          "student_tokens": 247
+        },
+        {
+          "condition": "Final only",
+          "step": 17,
+          "kl": 2.6156613728289813e-06,
+          "residual_student_mass": 1.4901161193847656e-07,
+          "completion_length_tokens": 52.0,
+          "anchor_positions": 4,
+          "student_tokens": 208
+        },
+        {
+          "condition": "Final only",
+          "step": 18,
+          "kl": 0.14361600230319027,
+          "residual_student_mass": 1.7881393432617188e-07,
+          "completion_length_tokens": 46.0,
+          "anchor_positions": 4,
+          "student_tokens": 184
+        },
+        {
+          "condition": "Final only",
+          "step": 19,
+          "kl": 0.03717734205315537,
+          "residual_student_mass": 8.940696716308594e-08,
+          "completion_length_tokens": 58.5,
+          "anchor_positions": 4,
+          "student_tokens": 234
+        }
+      ]
+    },
+    "accessIssues": []
+  },
+  "sources": [
+    {
+      "id": "training_results",
+      "label": "Collected Sparse OPD run artifacts",
+      "path": "results/summary.json",
+      "query": {
+        "engine": "duckdb",
+        "language": "sql",
+        "sql": "SELECT * FROM read_json_auto('results/summary.json')",
+        "description": "Aggregates immutable config, JSONL training metrics, and sandbox evaluation summaries by run.",
+        "tables_used": [
+          "results/summary.json",
+          "runs/*/metrics.jsonl",
+          "runs/*/evaluation/evaluation_summary.json"
+        ],
+        "metric_definitions": [
+          "pass@1 = tasks passing every hidden test / evaluated tasks",
+          "teacher GPU-hours = two teacher GPUs \u00d7 measured teacher request wall-clock hours",
+          "anchor positions = explicit completion positions sent for teacher scoring"
+        ]
+      }
+    },
+    {
+      "id": "training_metrics",
+      "label": "Per-step Sparse OPD metrics",
+      "path": "runs",
+      "query": {
+        "engine": "duckdb",
+        "language": "sql",
+        "sql": "SELECT * FROM read_json_auto('runs/**/metrics.jsonl', format='newline_delimited', union_by_name=true, filename=true)",
+        "description": "Loads per-step metrics from selected immutable run directories.",
+        "tables_used": [
+          "runs/**/metrics.jsonl"
+        ]
+      }
+    },
+    {
+      "id": "teacher_benchmark",
+      "label": "SGLang teacher benchmark",
+      "path": "reports/teacher_benchmark.json",
+      "query": {
+        "engine": "duckdb",
+        "language": "sql",
+        "sql": "SELECT * FROM read_json_auto('reports/teacher_benchmark.json')",
+        "description": "Required 60-case scoring matrix and 100-request deterministic stability test.",
+        "tables_used": [
+          "reports/teacher_benchmark.json"
+        ]
+      }
+    }
+  ]
+}

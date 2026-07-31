@@ -81,15 +81,15 @@ class OPDDataConfig:
 
 @dataclass(slots=True)
 class OPDSamplingConfig:
-    batch_prompts: int = 32       # prompts per optimizer step
-    group_size: int = 1           # rollouts per prompt (>1 only useful for CoT)
+    batch_prompts: int = 32  # prompts per optimizer step
+    group_size: int = 1  # rollouts per prompt (>1 only useful for CoT)
     temperature: float = 1.0
     top_p: float = 1.0
     top_k: int = -1
-    max_new_tokens: int = 16      # fast mode: the answer is a letter
-    cot_fraction: float = 0.0     # fraction of prompts using the CoT template
+    max_new_tokens: int = 16  # fast mode: the answer is a letter
+    cot_fraction: float = 0.0  # fraction of prompts using the CoT template
     cot_max_new_tokens: int = 300
-    gen_micro_seqs: int = 64      # sequences per generate() call
+    gen_micro_seqs: int = 64  # sequences per generate() call
 
 
 @dataclass(slots=True)
@@ -100,16 +100,16 @@ class OPDTrainConfig:
     warmup_steps: int = 50
     lr_scheduler: str = "cosine"  # "cosine" or "constant"
     max_grad_norm: float = 1.0
-    loss_fn: str = "full_kl"      # "full_kl", "sampled_rkl", or "sparse_anchor_rkl"
+    loss_fn: str = "full_kl"  # "full_kl", "sampled_rkl", or "sparse_anchor_rkl"
     weight_decay: float = 0.01
     gradient_accumulation_steps: int = 1
     bf16: bool = True
     seed: int = 0
-    score_micro_seqs: int = 32    # sequences per scoring forward (student + teacher)
-    eval_every: int = 200         # dev accuracy every N steps (0 = off)
+    score_micro_seqs: int = 32  # sequences per scoring forward (student + teacher)
+    eval_every: int = 200  # dev accuracy every N steps (0 = off)
     eval_dev_samples: int = 200
-    save_steps: int = 500         # checkpoint every N steps (0 = final only)
-    keep_checkpoints: int = 3     # newest step_* dirs kept on disk (0 = keep all)
+    save_steps: int = 500  # checkpoint every N steps (0 = final only)
+    keep_checkpoints: int = 3  # newest step_* dirs kept on disk (0 = keep all)
     resume_from: str = ""
 
 
@@ -254,13 +254,11 @@ class OPDConfig:
                 errors.extend(_check_template(f"data.{name}", template))
         if self.train.loss_fn not in ("full_kl", "sampled_rkl", "sparse_anchor_rkl"):
             errors.append(
-                "train.loss_fn must be 'full_kl', 'sampled_rkl', or "
-                f"'sparse_anchor_rkl', got {self.train.loss_fn!r}"
+                f"train.loss_fn must be 'full_kl', 'sampled_rkl', or 'sparse_anchor_rkl', got {self.train.loss_fn!r}"
             )
         if self.model.teacher_backend not in ("local_transformers", "sglang"):
             errors.append(
-                "model.teacher_backend must be 'local_transformers' or 'sglang', "
-                f"got {self.model.teacher_backend!r}"
+                f"model.teacher_backend must be 'local_transformers' or 'sglang', got {self.model.teacher_backend!r}"
             )
         interval = self.tutoring.interval_tokens
         if isinstance(interval, str) and interval != "final":
@@ -342,8 +340,10 @@ def _check_template(name: str, template: str) -> list[str]:
         return [f"{name} is not a valid format string: {e}"]
     errors = []
     if unknown := fields - _TEMPLATE_FIELDS_ALLOWED:
-        errors.append(f"{name} has unknown placeholders {sorted(unknown)}; "
-                      f"allowed: {sorted(_TEMPLATE_FIELDS_ALLOWED)}. Escape literal braces as '{{{{'.")
+        errors.append(
+            f"{name} has unknown placeholders {sorted(unknown)}; "
+            f"allowed: {sorted(_TEMPLATE_FIELDS_ALLOWED)}. Escape literal braces as '{{{{'."
+        )
     if missing := _TEMPLATE_FIELDS_REQUIRED - fields:
         errors.append(f"{name} is missing required placeholders {sorted(missing)}.")
     return errors

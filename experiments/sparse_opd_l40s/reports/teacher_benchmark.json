@@ -1,0 +1,497 @@
+{
+  "captured_at": "2026-07-30T14:31:15.403961+00:00",
+  "endpoint": "http://127.0.0.1:30000",
+  "scoring": [
+    {
+      "batch_size": 1,
+      "prompt_tokens": 256,
+      "top_logprobs": 32,
+      "ttft_proxy_ms": 221.11258499990072,
+      "requests_per_second": 4.522582918563631,
+      "tokens_per_second": 4.522582918563631
+    },
+    {
+      "batch_size": 1,
+      "prompt_tokens": 256,
+      "top_logprobs": 64,
+      "ttft_proxy_ms": 202.3721960003968,
+      "requests_per_second": 4.9413902688392985,
+      "tokens_per_second": 4.9413902688392985
+    },
+    {
+      "batch_size": 1,
+      "prompt_tokens": 256,
+      "top_logprobs": 128,
+      "ttft_proxy_ms": 202.88804400024674,
+      "requests_per_second": 4.92882665870042,
+      "tokens_per_second": 4.92882665870042
+    },
+    {
+      "batch_size": 1,
+      "prompt_tokens": 512,
+      "top_logprobs": 32,
+      "ttft_proxy_ms": 423.60284799997316,
+      "requests_per_second": 2.3607017864055138,
+      "tokens_per_second": 2.3607017864055138
+    },
+    {
+      "batch_size": 1,
+      "prompt_tokens": 512,
+      "top_logprobs": 64,
+      "ttft_proxy_ms": 206.7469980001988,
+      "requests_per_second": 4.836829601748502,
+      "tokens_per_second": 4.836829601748502
+    },
+    {
+      "batch_size": 1,
+      "prompt_tokens": 512,
+      "top_logprobs": 128,
+      "ttft_proxy_ms": 206.31610300006287,
+      "requests_per_second": 4.846931409904031,
+      "tokens_per_second": 4.846931409904031
+    },
+    {
+      "batch_size": 1,
+      "prompt_tokens": 1024,
+      "top_logprobs": 32,
+      "ttft_proxy_ms": 209.0970199997173,
+      "requests_per_second": 4.782468922806035,
+      "tokens_per_second": 4.782468922806035
+    },
+    {
+      "batch_size": 1,
+      "prompt_tokens": 1024,
+      "top_logprobs": 64,
+      "ttft_proxy_ms": 210.9944230005567,
+      "requests_per_second": 4.739461762917599,
+      "tokens_per_second": 4.739461762917599
+    },
+    {
+      "batch_size": 1,
+      "prompt_tokens": 1024,
+      "top_logprobs": 128,
+      "ttft_proxy_ms": 212.10882699961076,
+      "requests_per_second": 4.714560983366502,
+      "tokens_per_second": 4.714560983366502
+    },
+    {
+      "batch_size": 1,
+      "prompt_tokens": 2048,
+      "top_logprobs": 32,
+      "ttft_proxy_ms": 475.8176639998055,
+      "requests_per_second": 2.101645389945861,
+      "tokens_per_second": 2.101645389945861
+    },
+    {
+      "batch_size": 1,
+      "prompt_tokens": 2048,
+      "top_logprobs": 64,
+      "ttft_proxy_ms": 272.7579680004055,
+      "requests_per_second": 3.666254032214059,
+      "tokens_per_second": 3.666254032214059
+    },
+    {
+      "batch_size": 1,
+      "prompt_tokens": 2048,
+      "top_logprobs": 128,
+      "ttft_proxy_ms": 280.4090460003863,
+      "requests_per_second": 3.5662187588578096,
+      "tokens_per_second": 3.5662187588578096
+    },
+    {
+      "batch_size": 4,
+      "prompt_tokens": 256,
+      "top_logprobs": 32,
+      "ttft_proxy_ms": 218.06074800042552,
+      "requests_per_second": 18.34351223995707,
+      "tokens_per_second": 18.34351223995707
+    },
+    {
+      "batch_size": 4,
+      "prompt_tokens": 256,
+      "top_logprobs": 64,
+      "ttft_proxy_ms": 211.4023289996112,
+      "requests_per_second": 18.921267418994976,
+      "tokens_per_second": 18.921267418994976
+    },
+    {
+      "batch_size": 4,
+      "prompt_tokens": 256,
+      "top_logprobs": 128,
+      "ttft_proxy_ms": 215.41811900078756,
+      "requests_per_second": 18.568540188513,
+      "tokens_per_second": 18.568540188513
+    },
+    {
+      "batch_size": 4,
+      "prompt_tokens": 512,
+      "top_logprobs": 32,
+      "ttft_proxy_ms": 241.43410499982565,
+      "requests_per_second": 16.567667604387907,
+      "tokens_per_second": 16.567667604387907
+    },
+    {
+      "batch_size": 4,
+      "prompt_tokens": 512,
+      "top_logprobs": 64,
+      "ttft_proxy_ms": 240.15991299984307,
+      "requests_per_second": 16.65556899166021,
+      "tokens_per_second": 16.65556899166021
+    },
+    {
+      "batch_size": 4,
+      "prompt_tokens": 512,
+      "top_logprobs": 128,
+      "ttft_proxy_ms": 240.79422999966482,
+      "requests_per_second": 16.611693727069657,
+      "tokens_per_second": 16.611693727069657
+    },
+    {
+      "batch_size": 4,
+      "prompt_tokens": 1024,
+      "top_logprobs": 32,
+      "ttft_proxy_ms": 599.7930579997046,
+      "requests_per_second": 6.668966815554524,
+      "tokens_per_second": 6.668966815554524
+    },
+    {
+      "batch_size": 4,
+      "prompt_tokens": 1024,
+      "top_logprobs": 64,
+      "ttft_proxy_ms": 395.79227000012907,
+      "requests_per_second": 10.106311576016115,
+      "tokens_per_second": 10.106311576016115
+    },
+    {
+      "batch_size": 4,
+      "prompt_tokens": 1024,
+      "top_logprobs": 128,
+      "ttft_proxy_ms": 401.7833480002082,
+      "requests_per_second": 9.955614188365834,
+      "tokens_per_second": 9.955614188365834
+    },
+    {
+      "batch_size": 4,
+      "prompt_tokens": 2048,
+      "top_logprobs": 32,
+      "ttft_proxy_ms": 857.8286329993716,
+      "requests_per_second": 4.662935982929507,
+      "tokens_per_second": 4.662935982929507
+    },
+    {
+      "batch_size": 4,
+      "prompt_tokens": 2048,
+      "top_logprobs": 64,
+      "ttft_proxy_ms": 816.6240909995395,
+      "requests_per_second": 4.898214544594246,
+      "tokens_per_second": 4.898214544594246
+    },
+    {
+      "batch_size": 4,
+      "prompt_tokens": 2048,
+      "top_logprobs": 128,
+      "ttft_proxy_ms": 901.4797730005739,
+      "requests_per_second": 4.437148918700646,
+      "tokens_per_second": 4.437148918700646
+    },
+    {
+      "batch_size": 8,
+      "prompt_tokens": 256,
+      "top_logprobs": 32,
+      "ttft_proxy_ms": 284.70494099929056,
+      "requests_per_second": 28.09926646134299,
+      "tokens_per_second": 28.09926646134299
+    },
+    {
+      "batch_size": 8,
+      "prompt_tokens": 256,
+      "top_logprobs": 64,
+      "ttft_proxy_ms": 289.1229779997957,
+      "requests_per_second": 27.669886549126694,
+      "tokens_per_second": 27.669886549126694
+    },
+    {
+      "batch_size": 8,
+      "prompt_tokens": 256,
+      "top_logprobs": 128,
+      "ttft_proxy_ms": 301.9656299993585,
+      "requests_per_second": 26.493081348420333,
+      "tokens_per_second": 26.493081348420333
+    },
+    {
+      "batch_size": 8,
+      "prompt_tokens": 512,
+      "top_logprobs": 32,
+      "ttft_proxy_ms": 503.77466899954015,
+      "requests_per_second": 15.880115639572386,
+      "tokens_per_second": 15.880115639572386
+    },
+    {
+      "batch_size": 8,
+      "prompt_tokens": 512,
+      "top_logprobs": 64,
+      "ttft_proxy_ms": 496.72165699939796,
+      "requests_per_second": 16.105599357850622,
+      "tokens_per_second": 16.105599357850622
+    },
+    {
+      "batch_size": 8,
+      "prompt_tokens": 512,
+      "top_logprobs": 128,
+      "ttft_proxy_ms": 506.79749400023866,
+      "requests_per_second": 15.785397707582652,
+      "tokens_per_second": 15.785397707582652
+    },
+    {
+      "batch_size": 8,
+      "prompt_tokens": 1024,
+      "top_logprobs": 32,
+      "ttft_proxy_ms": 959.7456479996254,
+      "requests_per_second": 8.335541835145808,
+      "tokens_per_second": 8.335541835145808
+    },
+    {
+      "batch_size": 8,
+      "prompt_tokens": 1024,
+      "top_logprobs": 64,
+      "ttft_proxy_ms": 960.4902749997564,
+      "requests_per_second": 8.329079646331692,
+      "tokens_per_second": 8.329079646331692
+    },
+    {
+      "batch_size": 8,
+      "prompt_tokens": 1024,
+      "top_logprobs": 128,
+      "ttft_proxy_ms": 956.5941470000325,
+      "requests_per_second": 8.363003291509505,
+      "tokens_per_second": 8.363003291509505
+    },
+    {
+      "batch_size": 8,
+      "prompt_tokens": 2048,
+      "top_logprobs": 32,
+      "ttft_proxy_ms": 1888.7428549996912,
+      "requests_per_second": 4.235621582272675,
+      "tokens_per_second": 4.235621582272675
+    },
+    {
+      "batch_size": 8,
+      "prompt_tokens": 2048,
+      "top_logprobs": 64,
+      "ttft_proxy_ms": 1856.8640809999124,
+      "requests_per_second": 4.308339033459055,
+      "tokens_per_second": 4.308339033459055
+    },
+    {
+      "batch_size": 8,
+      "prompt_tokens": 2048,
+      "top_logprobs": 128,
+      "ttft_proxy_ms": 1882.9800350004007,
+      "requests_per_second": 4.248584611253352,
+      "tokens_per_second": 4.248584611253352
+    },
+    {
+      "batch_size": 16,
+      "prompt_tokens": 256,
+      "top_logprobs": 32,
+      "ttft_proxy_ms": 498.602175999622,
+      "requests_per_second": 32.089711537905785,
+      "tokens_per_second": 32.089711537905785
+    },
+    {
+      "batch_size": 16,
+      "prompt_tokens": 256,
+      "top_logprobs": 64,
+      "ttft_proxy_ms": 505.39225900047313,
+      "requests_per_second": 31.658577501055515,
+      "tokens_per_second": 31.658577501055515
+    },
+    {
+      "batch_size": 16,
+      "prompt_tokens": 256,
+      "top_logprobs": 128,
+      "ttft_proxy_ms": 515.6245540001692,
+      "requests_per_second": 31.030329870587874,
+      "tokens_per_second": 31.030329870587874
+    },
+    {
+      "batch_size": 16,
+      "prompt_tokens": 512,
+      "top_logprobs": 32,
+      "ttft_proxy_ms": 920.2017709994834,
+      "requests_per_second": 17.387490987570576,
+      "tokens_per_second": 17.387490987570576
+    },
+    {
+      "batch_size": 16,
+      "prompt_tokens": 512,
+      "top_logprobs": 64,
+      "ttft_proxy_ms": 884.8472330000732,
+      "requests_per_second": 18.08221736282321,
+      "tokens_per_second": 18.08221736282321
+    },
+    {
+      "batch_size": 16,
+      "prompt_tokens": 512,
+      "top_logprobs": 128,
+      "ttft_proxy_ms": 910.8129149999513,
+      "requests_per_second": 17.56672499533107,
+      "tokens_per_second": 17.56672499533107
+    },
+    {
+      "batch_size": 16,
+      "prompt_tokens": 1024,
+      "top_logprobs": 32,
+      "ttft_proxy_ms": 1781.7461399999956,
+      "requests_per_second": 8.979954910972918,
+      "tokens_per_second": 8.979954910972918
+    },
+    {
+      "batch_size": 16,
+      "prompt_tokens": 1024,
+      "top_logprobs": 64,
+      "ttft_proxy_ms": 1836.5243199996257,
+      "requests_per_second": 8.712108968969853,
+      "tokens_per_second": 8.712108968969853
+    },
+    {
+      "batch_size": 16,
+      "prompt_tokens": 1024,
+      "top_logprobs": 128,
+      "ttft_proxy_ms": 1755.9334289999242,
+      "requests_per_second": 9.11196275197782,
+      "tokens_per_second": 9.11196275197782
+    },
+    {
+      "batch_size": 16,
+      "prompt_tokens": 2048,
+      "top_logprobs": 32,
+      "ttft_proxy_ms": 3424.2603800003053,
+      "requests_per_second": 4.67254187019463,
+      "tokens_per_second": 4.67254187019463
+    },
+    {
+      "batch_size": 16,
+      "prompt_tokens": 2048,
+      "top_logprobs": 64,
+      "ttft_proxy_ms": 3502.6626959997884,
+      "requests_per_second": 4.5679534082093545,
+      "tokens_per_second": 4.5679534082093545
+    },
+    {
+      "batch_size": 16,
+      "prompt_tokens": 2048,
+      "top_logprobs": 128,
+      "ttft_proxy_ms": 3156.2060249998467,
+      "requests_per_second": 5.069377560674537,
+      "tokens_per_second": 5.069377560674537
+    },
+    {
+      "batch_size": 32,
+      "prompt_tokens": 256,
+      "top_logprobs": 32,
+      "ttft_proxy_ms": 820.0967550001224,
+      "requests_per_second": 39.01978614705679,
+      "tokens_per_second": 39.01978614705679
+    },
+    {
+      "batch_size": 32,
+      "prompt_tokens": 256,
+      "top_logprobs": 64,
+      "ttft_proxy_ms": 904.7034349996466,
+      "requests_per_second": 35.37070686596045,
+      "tokens_per_second": 35.37070686596045
+    },
+    {
+      "batch_size": 32,
+      "prompt_tokens": 256,
+      "top_logprobs": 128,
+      "ttft_proxy_ms": 1002.3734900005365,
+      "requests_per_second": 31.924228163678663,
+      "tokens_per_second": 31.924228163678663
+    },
+    {
+      "batch_size": 32,
+      "prompt_tokens": 512,
+      "top_logprobs": 32,
+      "ttft_proxy_ms": 1927.5046249995285,
+      "requests_per_second": 16.60177598796051,
+      "tokens_per_second": 16.60177598796051
+    },
+    {
+      "batch_size": 32,
+      "prompt_tokens": 512,
+      "top_logprobs": 64,
+      "ttft_proxy_ms": 1865.482422000241,
+      "requests_per_second": 17.15373976329854,
+      "tokens_per_second": 17.15373976329854
+    },
+    {
+      "batch_size": 32,
+      "prompt_tokens": 512,
+      "top_logprobs": 128,
+      "ttft_proxy_ms": 1954.042211000342,
+      "requests_per_second": 16.376309488021803,
+      "tokens_per_second": 16.376309488021803
+    },
+    {
+      "batch_size": 32,
+      "prompt_tokens": 1024,
+      "top_logprobs": 32,
+      "ttft_proxy_ms": 3722.8238689995123,
+      "requests_per_second": 8.59562555899262,
+      "tokens_per_second": 8.59562555899262
+    },
+    {
+      "batch_size": 32,
+      "prompt_tokens": 1024,
+      "top_logprobs": 64,
+      "ttft_proxy_ms": 3751.7979329995796,
+      "requests_per_second": 8.529243997534763,
+      "tokens_per_second": 8.529243997534763
+    },
+    {
+      "batch_size": 32,
+      "prompt_tokens": 1024,
+      "top_logprobs": 128,
+      "ttft_proxy_ms": 3799.2055109998546,
+      "requests_per_second": 8.422813640207215,
+      "tokens_per_second": 8.422813640207215
+    },
+    {
+      "batch_size": 32,
+      "prompt_tokens": 2048,
+      "top_logprobs": 32,
+      "ttft_proxy_ms": 7425.6625449997955,
+      "requests_per_second": 4.309379776697202,
+      "tokens_per_second": 4.309379776697202
+    },
+    {
+      "batch_size": 32,
+      "prompt_tokens": 2048,
+      "top_logprobs": 64,
+      "ttft_proxy_ms": 7049.954004000028,
+      "requests_per_second": 4.539036706032936,
+      "tokens_per_second": 4.539036706032936
+    },
+    {
+      "batch_size": 32,
+      "prompt_tokens": 2048,
+      "top_logprobs": 128,
+      "ttft_proxy_ms": 6891.868976999831,
+      "requests_per_second": 4.643152692947776,
+      "tokens_per_second": 4.643152692947776
+    }
+  ],
+  "decode": {
+    "prompt_tokens": 256,
+    "completion_tokens": 64,
+    "elapsed_seconds": 1.5247535400003471,
+    "tokens_per_second": 41.973996663083945
+  },
+  "stability": {
+    "requests": 100,
+    "failures": 0
+  },
+  "peak_teacher_vram_mib": 44175.0
+}

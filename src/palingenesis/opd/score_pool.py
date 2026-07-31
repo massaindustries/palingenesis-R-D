@@ -49,9 +49,18 @@ logger = logging.getLogger(__name__)
 
 
 @torch.no_grad()
-def score_rows(model, tok, rows, shots, letter_ids, batch_size: int, device: str,
-               system_message: str | None = None, template: str | None = None,
-               log_every: int = 50):
+def score_rows(
+    model,
+    tok,
+    rows,
+    shots,
+    letter_ids,
+    batch_size: int,
+    device: str,
+    system_message: str | None = None,
+    template: str | None = None,
+    log_every: int = 50,
+):
     """Yield rows annotated with teacher_answer / teacher_correct."""
     pad = tok.pad_token_id if tok.pad_token_id is not None else tok.eos_token_id
     t0 = time.time()
@@ -59,30 +68,37 @@ def score_rows(model, tok, rows, shots, letter_ids, batch_size: int, device: str
         chunk = rows[start : start + batch_size]
         prompts = [
             OPDTrainer._encode_prompt(
-                tok, build_messages(r, few_shots=shots, fast=True,
-                                    system_message=system_message, template=template)
+                tok, build_messages(r, few_shots=shots, fast=True, system_message=system_message, template=template)
             )
             for r in chunk
         ]
         # logits at the last prompt position = distribution over the first
         # completion token; _gather_logits keeps memory at batch x vocab.
         logits = OPDTrainer._gather_logits(
-            model, prompts, plens=[len(p) for p in prompts],
-            lens=[1] * len(prompts), pad=pad, device=device,
+            model,
+            prompts,
+            plens=[len(p) for p in prompts],
+            lens=[1] * len(prompts),
+            pad=pad,
+            device=device,
         )
         for row, row_logits in zip(chunk, logits):
             candidates = [letter for letter, _ in row["options"] if letter in letter_ids]
             scores = {letter: row_logits[letter_ids[letter]].item() for letter in candidates}
             answer = max(scores, key=scores.get)
-            yield {**row, "options": [list(o) for o in row["options"]],
-                   "teacher_answer": answer,
-                   "teacher_correct": answer == row["answer"]}
+            yield {
+                **row,
+                "options": [list(o) for o in row["options"]],
+                "teacher_answer": answer,
+                "teacher_correct": answer == row["answer"],
+            }
         batch_idx = start // batch_size
         if batch_idx % log_every == 0:
             done = start + len(chunk)
             rate = done / max(time.time() - t0, 1e-9)
-            logger.info("scored %d/%d rows (%.1f rows/s, ETA %.0f min)",
-                        done, len(rows), rate, (len(rows) - done) / rate / 60)
+            logger.info(
+                "scored %d/%d rows (%.1f rows/s, ETA %.0f min)", done, len(rows), rate, (len(rows) - done) / rate / 60
+            )
 
 
 def main():
@@ -116,18 +132,31 @@ def main():
 
     n_correct = 0
     with open(args.out, "w") as f:
-        for i, scored in enumerate(score_rows(
-            model, tok, rows, shots, letter_ids, args.batch_size, device,
-            system_message=config.data.system_message or None,
-            template=mcqa_templates(config)[0],
-        )):
+        for i, scored in enumerate(
+            score_rows(
+                model,
+                tok,
+                rows,
+                shots,
+                letter_ids,
+                args.batch_size,
+                device,
+                system_message=config.data.system_message or None,
+                template=mcqa_templates(config)[0],
+            )
+        ):
             n_correct += scored["teacher_correct"]
             f.write(json.dumps(scored, ensure_ascii=False) + "\n")
             if (i + 1) % 10000 == 0:
                 f.flush()
 
-    logger.info("Done: teacher correct on %d/%d rows (%.1f%%) -> %s",
-                n_correct, len(rows), 100 * n_correct / max(1, len(rows)), args.out)
+    logger.info(
+        "Done: teacher correct on %d/%d rows (%.1f%%) -> %s",
+        n_correct,
+        len(rows),
+        100 * n_correct / max(1, len(rows)),
+        args.out,
+    )
 
 
 if __name__ == "__main__":
