@@ -77,5 +77,6 @@ Current validated results:
   passed, with structural-only rendering verification because Chromium is not
   installed.
 
-Open issue: publication of the completed experiment branch remains in
-progress.
+Publication complete: branch `experiment/sparse-opd-l40s` pushed to
+`massaindustries/palingenesis-R-D` without modifying the divergent `main`
+branch.
