@@ -35,6 +35,11 @@ def statistics_mean(values: list[float]) -> float:
     return sum(values) / len(values)
 
 
+def test_relative_savings_keeps_cost_direction_explicit() -> None:
+    assert MODULE.relative_savings(75, 100) == pytest.approx(0.25)
+    assert MODULE.relative_savings(125, 100) == pytest.approx(-0.25)
+
+
 @pytest.mark.parametrize(
     ("name", "updates"),
     [("step_5", 5), ("step_15", 15), ("final", 20)],

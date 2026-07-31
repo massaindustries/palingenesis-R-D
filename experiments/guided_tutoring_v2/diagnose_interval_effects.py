@@ -13,6 +13,7 @@ from pathlib import Path
 INTERVALS = (8, 32, 128)
 SEEDS = (0, 1, 2)
 T_CRITICAL_95_DF2 = 4.302652729911275
+ALLOCATED_GPUS = 4
 
 
 def read_json(path: Path) -> dict:
@@ -66,6 +67,10 @@ def weighted_mean(rows: list[dict], key: str, weight: str) -> float:
     return sum(float(row[key]) * float(row[weight]) for row in rows) / denominator
 
 
+def relative_savings(candidate: float, comparator: float) -> float:
+    return 1 - candidate / comparator
+
+
 def summarize_selected_training(
     *,
     run_dir: Path,
@@ -88,6 +93,7 @@ def summarize_selected_training(
     trajectory_tokens = sum(int(row["trajectory_tokens"]) for row in metric_rows)
     groups = sum(int(row["teacher_guidance_groups"]) for row in metric_rows)
     guided_rollouts = sum(int(row["guided_rollout_count"]) for row in metric_rows)
+    wall_clock_seconds = float(metric_rows[-1]["run/wall_clock_seconds"])
     task_counts = Counter(str(row["task_id"]) for row in provenance)
     return {
         "selected_checkpoint": checkpoint_name,
@@ -96,6 +102,11 @@ def summarize_selected_training(
         "trajectory_tokens": trajectory_tokens,
         "teacher_trajectory_fraction": teacher_tokens / trajectory_tokens,
         "teacher_groups": groups,
+        "teacher_requests": sum(int(row["teacher_requests"]) for row in metric_rows),
+        "teacher_wall_clock_seconds": sum(
+            float(row["teacher_wall_clock_ms"]) for row in metric_rows
+        )
+        / 1_000,
         "guided_rollouts": guided_rollouts,
         "groups_per_guided_rollout": groups / guided_rollouts,
         "intervention_coverage_mean": statistics.mean(
@@ -122,6 +133,11 @@ def summarize_selected_training(
         "accepted_rollouts": len(provenance),
         "unique_training_tasks": len(task_counts),
         "mean_repeats_per_training_task": statistics.mean(task_counts.values()),
+        "wall_clock_seconds": wall_clock_seconds,
+        # The experiment reserved two teacher, one train, and one rollout GPU.
+        "estimated_allocated_gpu_hours": ALLOCATED_GPUS
+        * wall_clock_seconds
+        / 3_600,
     }
 
 
@@ -270,6 +286,7 @@ def main() -> None:
     dev_checkpoint_curves = {}
     for interval in INTERVALS:
         seed_summaries = []
+        full_grid_seed_summaries = []
         interval_selections = [
             selected[(interval, seed)] for seed in SEEDS
         ]
@@ -281,8 +298,26 @@ def main() -> None:
                     checkpoint_name=str(row["selected_checkpoint_name"]),
                 )
             )
+            full_grid_seed_summaries.append(
+                summarize_selected_training(
+                    run_dir=args.run_root / f"i{interval}_seed{seed}",
+                    checkpoint_name="final",
+                )
+            )
+        selected_gpu_hours = sum(
+            row["estimated_allocated_gpu_hours"] for row in seed_summaries
+        )
+        full_grid_gpu_hours = sum(
+            row["estimated_allocated_gpu_hours"]
+            for row in full_grid_seed_summaries
+        )
+        selected_teacher_tokens = sum(row["teacher_tokens"] for row in seed_summaries)
+        full_grid_teacher_tokens = sum(
+            row["teacher_tokens"] for row in full_grid_seed_summaries
+        )
         training[str(interval)] = {
             "seeds": seed_summaries,
+            "full_grid_seeds": full_grid_seed_summaries,
             "mean_selected_updates": statistics.mean(
                 row["updates"] for row in seed_summaries
             ),
@@ -308,6 +343,22 @@ def main() -> None:
                 for row in seed_summaries
             )
             / sum(row["teacher_tokens"] for row in seed_summaries),
+            "selected_total_allocated_gpu_hours": selected_gpu_hours,
+            "full_grid_total_allocated_gpu_hours": full_grid_gpu_hours,
+            "selected_total_teacher_tokens": selected_teacher_tokens,
+            "full_grid_total_teacher_tokens": full_grid_teacher_tokens,
+            "selected_total_teacher_requests": sum(
+                row["teacher_requests"] for row in seed_summaries
+            ),
+            "full_grid_total_teacher_requests": sum(
+                row["teacher_requests"] for row in full_grid_seed_summaries
+            ),
+            "retrospective_early_stop_gpu_hour_savings_fraction": relative_savings(
+                selected_gpu_hours, full_grid_gpu_hours
+            ),
+            "retrospective_early_stop_teacher_token_savings_fraction": relative_savings(
+                selected_teacher_tokens, full_grid_teacher_tokens
+            ),
         }
         dev_checkpoint_curves[str(interval)] = {}
         for checkpoint_name in ("step_5", "step_10", "step_15", "final"):
@@ -334,6 +385,44 @@ def main() -> None:
                 "mean_completion_tokens": statistics.mean(
                     float(candidate["mean_completion_tokens"])
                     for candidate in candidates
+                ),
+            }
+
+    economics = {
+        "allocated_gpu_hour_definition": (
+            "four reserved GPUs multiplied by run wall-clock hours"
+        ),
+        "currency_cost_formula": (
+            "allocated GPU-hours multiplied by the blended reserved-GPU hourly price"
+        ),
+        "comparisons": {},
+    }
+    for basis in ("full_grid", "selected"):
+        candidate_gpu_hours = training["32"][
+            f"{basis}_total_allocated_gpu_hours"
+        ]
+        candidate_teacher_tokens = training["32"][f"{basis}_total_teacher_tokens"]
+        for comparator in (8, 128):
+            comparator_gpu_hours = training[str(comparator)][
+                f"{basis}_total_allocated_gpu_hours"
+            ]
+            comparator_teacher_tokens = training[str(comparator)][
+                f"{basis}_total_teacher_tokens"
+            ]
+            economics["comparisons"][f"32_vs_{comparator}_{basis}"] = {
+                "allocated_gpu_hours_32": candidate_gpu_hours,
+                "allocated_gpu_hours_comparator": comparator_gpu_hours,
+                "allocated_gpu_hours_saved": comparator_gpu_hours
+                - candidate_gpu_hours,
+                "allocated_gpu_hour_savings_fraction": relative_savings(
+                    candidate_gpu_hours, comparator_gpu_hours
+                ),
+                "teacher_tokens_32": candidate_teacher_tokens,
+                "teacher_tokens_comparator": comparator_teacher_tokens,
+                "teacher_tokens_saved": comparator_teacher_tokens
+                - candidate_teacher_tokens,
+                "teacher_token_savings_fraction": relative_savings(
+                    candidate_teacher_tokens, comparator_teacher_tokens
                 ),
             }
 
@@ -388,6 +477,7 @@ def main() -> None:
             bool(row["sandbox"]["test_pass"]) for row in base
         ),
         "training_at_selected_checkpoints": training,
+        "economics": economics,
         "dev_checkpoint_curves": dev_checkpoint_curves,
         "test_by_interval": test,
         "pairwise_interval_differences": pairwise,

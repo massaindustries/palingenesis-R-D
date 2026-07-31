@@ -225,17 +225,101 @@ Final autonomous results on the untouched 40-task test split:
 | Guided interval 32 | **13, 13, 11** | **30.83%** | **+3.33 pp** |
 | Guided interval 128 | 11, 9, 13 | 27.50% | 0.00 pp |
 
-Interval 32 was the best observed tradeoff, outperforming base/offline by 3.33
-percentage points on average. Across the 120 seed-task outcomes it made five
-fixes and one regression, so `(5 - 1) / 120 = +3.33 pp`. Interval 8 made six
-fixes but seven regressions, and interval 128 made three of each: the advantage
-at interval 32 came mainly from avoiding collateral regressions, not from
-creating the largest number of fixes. Two seeds fixed two base failures without
-a regression, while the third had one fix and one regression. The individual
-paired McNemar value for each +5-point seed was `p=0.5`, and the paired
-bootstrap intervals include zero, so this pilot is **evidence of real teacher
-following but not yet a statistically conclusive autonomous quality gain**.
-Interval 8 over-intervened; interval 128 under-intervened.
+#### Why interval 32 performed best
 
-Finally, the complete repository test suite passed: **299 tests passed**. The
+For interval `k`, let `F_k` be the number of base failures fixed and `R_k` the
+number of base successes regressed across the three seeds and 40 test tasks:
+
+```text
+delta_k = (F_k - R_k) / (3 * 40).
+```
+
+| Interval | Fixes / 120 | Regressions / 120 | Net | Delta vs base | Observed teacher share | Groups / guided rollout | Mean completion tokens | Max-length / 120 |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 8 | 6 | 7 | -1 | -0.83 pp | 49.35% | 17.42 | 288.29 | 7 |
+| 32 | 5 | 1 | +4 | **+3.33 pp** | 18.46% | 5.48 | 214.85 | 0 |
+| 128 | 3 | 3 | 0 | 0.00 pp | 4.32% | 1.35 | 252.40 | 3 |
+
+Interval 32 therefore won mainly by avoiding collateral regressions, not by
+creating the most fixes: interval 8 made one additional fix but six additional
+regressions. Its observed advantage over interval 8 was
+`(4 - (-1)) / 120 = 4.17 pp`; its advantage over interval 128 was
+`(4 - 0) / 120 = 3.33 pp`.
+
+With eight teacher tokens per intervention, the ideal teacher share is
+`8 / (k + 8)`: 50.00%, 20.00%, and 5.88% for intervals 8, 32, and 128. The
+logs closely follow that geometry. Interval 8 lets the teacher occupy roughly
+half the trajectory and creates about 17 continuation seams per rollout; its
+selected models are longer and have seven truncations. Interval 128 provides
+only about 1.35 groups per rollout and 92.22% intervention coverage. Interval
+32 supplies about five or six groups with 100% coverage while leaving roughly
+four fifths of the trajectory autonomous.
+
+The deterministic train-only probe supports the same mechanism without dev
+checkpoint selection: interval 32 moves 9/20 student-only passes to 11/20 with
+two fixes and no regressions; interval 8 has two fixes and two regressions, and
+interval 128 has no fixes and one regression. The selected interval-32 targets
+also have the largest weighted teacher-token NLL reduction (`-0.06145`), though
+cross-interval NLLs score different token positions and are not directly
+exchangeable.
+
+This remains a **best observed point, not a proven optimum**. The task-cluster
+bootstrap 95% interval for interval 32 versus base is `[-1.67, +10.00] pp`, and
+versus interval 8 it is `[-4.17, +11.67] pp`; both include zero. All interval-32
+checkpoints were selected at step 5, while the interval-8 and interval-128
+selections average 16.67 and 18.33 updates. At the matched step-5 dev checkpoint
+interval 32 is still best (36.51% versus 31.75% and 30.16%), but the untouched
+test did not evaluate every matched checkpoint. The positive interval-32 events
+are concentrated on two tasks, and seeds 0 and 1 have identical pass/fail
+vectors.
+
+#### Compute economics and potential savings
+
+Allocated GPU-hours mean four reserved GPUs—two teacher, one training, and one
+rollout GPU—multiplied by run wall-clock hours. They measure reserved capacity,
+not utilization or electricity. The complete 20-update scientific grid actually
+consumed:
+
+| Interval | Three-seed allocated GPU-hours | Teacher tokens | Teacher requests | Test delta vs base |
+|---:|---:|---:|---:|---:|
+| 8 | 7.2144 | 135,873 | 6,087 | -0.83 pp |
+| 32 | 6.5503 | 49,031 | 2,199 | **+3.33 pp** |
+| 128 | 5.7722 | 9,524 | 468 | 0.00 pp |
+
+On the actually executed full grid, interval 32 dominates interval 8 in this
+pilot: it used **0.6641 fewer allocated GPU-hours (9.20%)** and **86,842 fewer
+teacher tokens (63.91%)**, while improving rather than reducing pass@1.
+Interval 128 is cheaper than interval 32 by 0.7782 allocated GPU-hours and uses
+far fewer teacher tokens, but it produced no mean quality gain; this is a
+quality/cost tradeoff rather than a savings claim.
+
+The checkpoint choices show a larger *potential* saving for a future validated
+early-stop recipe:
+
+| Interval | Selected steps by seed | Allocated GPU-hours through selected checkpoints | Teacher tokens through selected checkpoints |
+|---:|---:|---:|---:|
+| 8 | 15, 20, 15 | 5.8974 | 110,577 |
+| 32 | 5, 5, 5 | **1.4625** | 10,357 |
+| 128 | 15, 20, 20 | 5.2213 | 8,609 |
+
+Stopping all interval-32 runs at step 5 would reduce their allocation from
+6.5503 to 1.4625 GPU-hours (**77.67%**) and teacher tokens from 49,031 to 10,357
+(**78.88%**). Relative to the selected interval-8 checkpoints, it would use
+**75.20% fewer GPU-hours** and **90.63% fewer teacher tokens**. These are
+retrospective savings, not savings realized by this experiment: the later
+checkpoints still had to be trained and evaluated to discover that step 5 won.
+A follow-up must preregister or independently validate the step-5 stopping rule
+before treating these savings as operational.
+
+If `p_GPU` is the blended price per reserved GPU-hour, the measured full-grid
+cost is `6.5503 * p_GPU` for interval 32 and the saving versus interval 8 is
+`0.6641 * p_GPU`. A validated step-5 recipe would cost `1.4625 * p_GPU` for
+three seeds, or approximately `0.4875 * p_GPU` per seed, saving
+`5.0879 * p_GPU` versus running all three interval-32 seeds to step 20. No
+currency total or energy estimate is asserted because neither an hourly price
+nor GPU energy counters were recorded. After training, evaluation and
+deployment are student-only, so the final checkpoint incurs no online teacher
+inference cost.
+
+Finally, the complete repository test suite passed: **300 tests passed**. The
 new diagnostic and its tests pass Ruff; whitespace and secret scans are clean.
